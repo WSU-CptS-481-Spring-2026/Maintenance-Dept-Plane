@@ -20,9 +20,9 @@ type TWorkItemFiltersToggleProps = {
 export const WorkItemFiltersToggle = observer(function WorkItemFiltersToggle(props: TWorkItemFiltersToggleProps) {
   const { entityType, entityId } = props;
   // store hooks
-  const { getFilter } = useWorkItemFilters();
+  const { getOrCreateFilter } = useWorkItemFilters();
   // derived values
-  const filter = getFilter(entityType, entityId);
+  const filter = getOrCreateFilter({ entityType, entityId });
 
   return <FiltersToggle filter={filter} />;
 });
