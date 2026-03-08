@@ -23,7 +23,7 @@ type Props = {
   editorComponent: React.FC<TVersionEditorProps>;
   fetchVersionDetails: (pageId: string, versionId: string) => Promise<TPageVersion | undefined>;
   handleClose: () => void;
-  handleRestore: (descriptionHTML: string) => Promise<void>;
+  handleRestore: (descriptionHTML: string, versionId: string) => Promise<void>;
   pageId: string;
   restoreEnabled: boolean;
   storeType: EPageStoreType;
@@ -54,9 +54,9 @@ export const PageVersionsMainContent = observer(function PageVersionsMainContent
   );
 
   const handleRestoreVersion = async () => {
-    if (!restoreEnabled) return;
+    if (!restoreEnabled || !activeVersion) return;
     setIsRestoring(true);
-    await handleRestore(versionDetails?.description_html ?? "<p></p>")
+    await handleRestore(versionDetails?.description_html ?? "<p></p>", activeVersion)
       .then(() => {
         setToast({
           type: TOAST_TYPE.SUCCESS,
