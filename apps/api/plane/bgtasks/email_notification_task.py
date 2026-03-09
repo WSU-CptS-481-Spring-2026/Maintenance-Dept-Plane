@@ -15,7 +15,6 @@ from django.template.loader import render_to_string
 
 # Django imports
 from django.utils import timezone
-from django.utils.html import strip_tags
 
 # Module imports
 from plane.db.models import EmailNotificationLog, Issue, User
@@ -28,6 +27,37 @@ def remove_unwanted_characters(input_text):
     # Remove only control characters and potentially problematic characters for email subjects
     processed_text = re.sub(r"[\x00-\x1F\x7F-\x9F]", "", input_text)
     return processed_text
+
+
+def html_to_plain_text_with_urls(html_content):
+    """Convert HTML to plain text with URLs preserved in links (#8673).
+
+    MUAs that prefer TEXT over HTML (e.g. Thunderbird for security) need real URLs
+    in the plain text part. strip_tags() loses href values and leaks <style> content.
+    This helper removes style/script blocks and converts <a href="url">text</a> to
+    "text (url)" so links are visible and clickable in plain text.
+    """
+    soup = BeautifulSoup(html_content, "html.parser")
+
+    # Remove style and script blocks - they leak raw CSS/JS into plain text
+    for tag in soup.find_all(["style", "script"]):
+        tag.decompose()
+
+    # Convert links to "text (url)" format so URLs are visible in plain text
+    for a in soup.find_all("a", href=True):
+        text = a.get_text(strip=True)
+        href = a.get("href", "").strip()
+        if href:
+            replacement = f"{text} ({href})" if text else href
+        else:
+            replacement = text or ""
+        a.replace_with(replacement)
+
+    # Get plain text and normalize whitespace
+    text = soup.get_text(separator="\n")
+    text = re.sub(r"\n\s*\n", "\n\n", text)
+    text = re.sub(r"[ \t]+", " ", text)
+    return text.strip()
 
 
 # acquire and delete redis lock
@@ -260,7 +290,7 @@ def send_email_notification(issue_id, notification_data, receiver_id, email_noti
                 "entity_type": "issue",
             }
             html_content = render_to_string("emails/notifications/issue-updates.html", context)
-            text_content = strip_tags(html_content)
+            text_content = html_to_plain_text_with_urls(html_content)
 
             try:
                 connection = get_connection(
