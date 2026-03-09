@@ -17,14 +17,14 @@ export type TOperatorForPayload = {
 /**
  * Converts a display operator to the format needed for supported by filter expression condition.
  * @param displayOperator - The operator from the UI
+ * @param isNegated - Flag to indicate if the condition is negated
  * @returns Object with supported operator and negation flag
  */
-export const getOperatorForPayload = (displayOperator: TAllAvailableOperatorsForDisplay): TOperatorForPayload => {
-  const isNegation = false;
-  const operator = displayOperator;
+export const getOperatorForPayload = (displayOperator: TAllAvailableOperatorsForDisplay, isNegated = false): TOperatorForPayload => {
+  const operator = displayOperator as TSupportedOperators;
 
   return {
     operator,
-    isNegation,
+    isNegation: isNegated,
   };
 };
