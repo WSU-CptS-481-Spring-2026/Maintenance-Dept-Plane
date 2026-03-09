@@ -154,6 +154,9 @@ class ComplexFilterBackend(filters.BaseFilterBackend):
                         # 'or' and 'and' have lists as their values
                         for item in value:
                             fields.extend(self._extract_field_names(item))
+                elif key == "is_negated":
+                    # Skip the is_negated metadata flag - it's not a filter field
+                    continue
                 else:
                     # This is a field name - apply transformation hook
                     transformed_field = self._transform_field_name_for_validation(key)
@@ -239,6 +242,8 @@ class ComplexFilterBackend(filters.BaseFilterBackend):
         filterset_class perform validation and build a combined Q object
         from all the field filters.
 
+        Supports the 'is_negated' flag to negate the resulting Q object.
+
         Returns a Q object representing all the field conditions in the leaf.
         """
         if not leaf_conditions:
@@ -254,8 +259,12 @@ class ComplexFilterBackend(filters.BaseFilterBackend):
                 }
             )
 
+        # Extract and remove the is_negated flag before processing
+        is_negated = leaf_conditions.get("is_negated", False)
+        filter_conditions = {k: v for k, v in leaf_conditions.items() if k != "is_negated"}
+
         # Apply preprocessing hook
-        processed_conditions = self._preprocess_leaf_conditions(leaf_conditions, view, queryset)
+        processed_conditions = self._preprocess_leaf_conditions(filter_conditions, view, queryset)
 
         # Build a QueryDict from the leaf conditions
         qd = QueryDict(mutable=True)
@@ -293,7 +302,13 @@ class ComplexFilterBackend(filters.BaseFilterBackend):
                 }
             )
 
-        return fs.build_combined_q()
+        combined_q = fs.build_combined_q()
+        
+        # Apply negation if the flag was set
+        if is_negated:
+            return ~combined_q
+        
+        return combined_q
 
     def _get_max_depth(self, view):
         """Return the maximum allowed nesting depth for complex filters.
