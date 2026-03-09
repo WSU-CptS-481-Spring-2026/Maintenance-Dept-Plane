@@ -4,7 +4,7 @@
  * See the LICENSE file for details.
  */
 
-import React, { useState } from "react";
+import React from "react";
 import { observer } from "mobx-react";
 // plane imports
 import type { IFilterInstance } from "@plane/shared-state";
@@ -20,10 +20,13 @@ export const FilterItemNegationToggle = observer(function FilterItemNegationTogg
   E extends TExternalFilter,
 >(props: FilterItemNegationToggleProps<P, E>) {
   const { conditionId, filter } = props;
-  const [isExclude, setIsExclude] = useState(false);
+
+  // Derive negation state from the filter store (reactive via MobX observer)
+  const condition = filter.allConditionsForDisplay.find(c => c.id === conditionId);
+  const isNegated = condition?.isNegated ?? false;
 
   const handleToggleNegation = () => {
-    setIsExclude(!isExclude);
+    filter.toggleConditionNegation(conditionId);
   };
 
   return (
@@ -33,7 +36,7 @@ export const FilterItemNegationToggle = observer(function FilterItemNegationTogg
       type="button"
       aria-label="Toggle negation"
     >
-      {isExclude ? "exclude" : "include"}
+      {isNegated ? "exclude" : "include"}
     </button>
   );
 });

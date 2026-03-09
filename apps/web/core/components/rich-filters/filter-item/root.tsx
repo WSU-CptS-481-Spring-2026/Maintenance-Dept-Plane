@@ -60,7 +60,7 @@ export const FilterItem = observer(function FilterItem<P extends TFilterProperty
 
   const handleOperatorChange = (operator: TAllAvailableOperatorsForDisplay) => {
     if (operator) {
-      const { operator: positiveOperator, isNegation } = getOperatorForPayload(operator);
+      const { operator: positiveOperator, isNegation } = getOperatorForPayload(operator, condition.isNegated ?? false);
       filter.updateConditionOperator(condition.id, positiveOperator, isNegation);
     }
   };
