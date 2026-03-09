@@ -26,6 +26,13 @@ export const CustomTooltip = React.memo(function CustomTooltip(props: Props) {
 
   if (!active || !filteredPayload || !filteredPayload.length) return null;
 
+  const formatTooltipValue = (value: ValueType): string | number => {
+    if (typeof value === "number" && !Number.isInteger(value)) {
+      return Number(value.toFixed(1));
+    }
+    return value ?? "";
+  };
+
   return (
     <Card
       className="flex flex-col max-h-[40vh] w-[12rem] overflow-y-scroll vertical-scrollbar scrollbar-sm"
@@ -53,7 +60,7 @@ export const CustomTooltip = React.memo(function CustomTooltip(props: Props) {
               )}
               <span className="text-tertiary truncate">{itemLabels[item?.dataKey]}:</span>
             </div>
-            <span className="flex-shrink-0 font-medium text-secondary">{item?.value}</span>
+            <span className="flex-shrink-0 font-medium text-secondary">{formatTooltipValue(item?.value)}</span>
           </div>
         );
       })}
