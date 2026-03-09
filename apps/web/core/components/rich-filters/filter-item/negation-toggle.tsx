@@ -4,10 +4,9 @@
  * See the LICENSE file for details.
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { observer } from "mobx-react";
 // plane imports
-import { CloseIcon } from "@plane/propel/icons";
 import type { IFilterInstance } from "@plane/shared-state";
 import type { TExternalFilter, TFilterProperty } from "@plane/types";
 
@@ -21,9 +20,10 @@ export const FilterItemNegationToggle = observer(function FilterItemNegationTogg
   E extends TExternalFilter,
 >(props: FilterItemNegationToggleProps<P, E>) {
   const { conditionId, filter } = props;
+  const [isExclude, setIsExclude] = useState(false);
 
   const handleToggleNegation = () => {
-    // placeholder for toggling negation logic, as the current filter expression structure does not support it yet
+    setIsExclude(!isExclude);
   };
 
   return (
@@ -33,7 +33,7 @@ export const FilterItemNegationToggle = observer(function FilterItemNegationTogg
       type="button"
       aria-label="Toggle negation"
     >
-      <CloseIcon className="size-3.5" />
+      {isExclude ? "exclude" : "include"}
     </button>
   );
 });
