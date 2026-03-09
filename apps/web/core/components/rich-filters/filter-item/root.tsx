@@ -86,7 +86,7 @@ export const FilterItem = observer(function FilterItem<P extends TFilterProperty
 
   return (
     <FilterItemContainer conditionValue={condition.value} showTransition={showTransition}>
-      {/* Remove button */}
+      {/* Negation Toggle */}
       {!isDisabled && <FilterItemNegationToggle conditionId={condition.id} filter={filter} />}
       
       {/* Property section */}
