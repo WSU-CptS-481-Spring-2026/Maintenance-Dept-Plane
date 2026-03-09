@@ -53,6 +53,7 @@ export type TFilterConditionNode<P extends TFilterProperty, V extends TFilterVal
   property: P;
   operator: TSupportedOperators;
   value: SingleOrArray<V>;
+  isNegated?: boolean; // Flag to indicate if the condition is negated (e.g., "is not", "not between")
 };
 
 /**
