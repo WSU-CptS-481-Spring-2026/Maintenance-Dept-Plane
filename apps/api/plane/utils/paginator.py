@@ -345,23 +345,38 @@ class GroupedOffsetPaginator(OffsetPaginator):
             result_group_mapping[str(result_id)].add(str(group_id))
 
         # Adding group_ids key to each issue and grouping by group_name
+        # Map group_ids not in group_by_fields (e.g. archived modules) to "None"
+        group_by_fields_set = set(str(f) for f in self.group_by_fields)
         for result in results:
             result_id = result["id"]
             group_ids = list(result_group_mapping[str(result_id)])
-            result[self.FIELD_MAPPER.get(self.group_by_field_name)] = [] if "None" in group_ids else group_ids
+            # Treat archived modules as None for display
+            effective_group_ids = [g for g in group_ids if g in group_by_fields_set]
+            result[self.FIELD_MAPPER.get(self.group_by_field_name)] = (
+                [] if "None" in group_ids or not effective_group_ids else effective_group_ids
+            )
             # If a result belongs to multiple groups, add it to each group
             for group_id in group_ids:
-                if not self.__result_already_added(result, grouped_by_field_name[group_id]):
-                    grouped_by_field_name[group_id].append(result)
+                effective_group_id = group_id if group_id in group_by_fields_set else "None"
+                if not self.__result_already_added(result, grouped_by_field_name[effective_group_id]):
+                    grouped_by_field_name[effective_group_id].append(result)
 
-        # Convert grouped_by_field_name back to a list for each group
-        processed_results = {
-            str(group_id): {
-                "results": issues,
-                "total_results": total_group_dict.get(str(group_id)),
-            }
-            for group_id, issues in grouped_by_field_name.items()
-        }
+        # Build processed_results: only include groups in group_by_fields. Merge "None" total with orphaned groups.
+        processed_results = {}
+        for group_id, issues in grouped_by_field_name.items():
+            if group_id in group_by_fields_set:
+                # Add counts from orphaned groups (e.g. archived modules) to "None"
+                total = total_group_dict.get(group_id, 0)
+                if group_id == "None":
+                    total += sum(
+                        total_group_dict.get(gid, 0)
+                        for gid in grouped_by_field_name
+                        if gid not in group_by_fields_set
+                    )
+                processed_results[str(group_id)] = {
+                    "results": issues,
+                    "total_results": total,
+                }
 
         return processed_results
 
@@ -570,6 +585,7 @@ class SubGroupedOffsetPaginator(OffsetPaginator):
         # Preparing a dict to keep track of group IDs associated with each label ID
         result_group_mapping = defaultdict(set)
         result_sub_group_mapping = defaultdict(set)
+        group_by_fields_set = set(str(f) for f in self.group_by_fields)
 
         # Iterate over results to fill the above dictionaries
         if self.group_by_field_name in self.FIELD_MAPPER:
@@ -586,26 +602,32 @@ class SubGroupedOffsetPaginator(OffsetPaginator):
 
         # Iterate over results
         for result in results:
-            # Get the group value
+            # Get the group value - map orphaned (e.g. archived module) to "None"
             group_value = str(result.get(self.group_by_field_name))
-            # Get the sub group value
             sub_group_value = str(result.get(self.sub_group_by_field_name))
-            # Check if the group value is in the processed results
+            effective_group = group_value if group_value in group_by_fields_set else "None"
+            sub_results = processed_results.get(effective_group, {}).get("results", {})
+            effective_sub_group = sub_group_value if sub_group_value in sub_results else "None"
+            if effective_sub_group not in sub_results and effective_group in processed_results:
+                processed_results[effective_group]["results"][effective_sub_group] = {
+                    "results": [],
+                    "total_results": 0,
+                }
             result_id = result["id"]
 
-            if group_value in processed_results and sub_group_value in processed_results[str(group_value)]["results"]:
+            if effective_group in processed_results and effective_sub_group in processed_results[effective_group]["results"]:
                 if self.group_by_field_name in self.FIELD_MAPPER:
-                    # for multi grouper
                     group_ids = list(result_group_mapping[str(result_id)])
-                    result[self.FIELD_MAPPER.get(self.group_by_field_name)] = [] if "None" in group_ids else group_ids
+                    effective_group_ids = [g for g in group_ids if g in group_by_fields_set]
+                    result[self.FIELD_MAPPER.get(self.group_by_field_name)] = (
+                        [] if "None" in group_ids or not effective_group_ids else effective_group_ids
+                    )
                 if self.sub_group_by_field_name in self.FIELD_MAPPER:
                     sub_group_ids = list(result_sub_group_mapping[str(result_id)])
-                    # for multi groups
                     result[self.FIELD_MAPPER.get(self.sub_group_by_field_name)] = (
                         [] if "None" in sub_group_ids else sub_group_ids
                     )
-                # If a result belongs to multiple groups, add it to each group
-                processed_results[str(group_value)]["results"][str(sub_group_value)]["results"].append(result)
+                processed_results[effective_group]["results"][effective_sub_group]["results"].append(result)
 
         return processed_results
 

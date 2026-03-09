@@ -172,7 +172,10 @@ def issue_group_values(
         )
 
     if field == "issue_module__module_id":
-        queryset = Module.objects.filter(workspace__slug=slug).values_list("id", flat=True)
+        # Exclude archived modules so work items in archived modules appear in "None" column
+        queryset = Module.objects.filter(
+            workspace__slug=slug, archived_at__isnull=True
+        ).values_list("id", flat=True)
         if project_id:
             return list(queryset.filter(project_id=project_id)) + ["None"]
         return list(queryset) + ["None"]
