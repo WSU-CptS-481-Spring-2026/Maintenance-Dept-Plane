@@ -34,5 +34,15 @@ export default defineConfig(() => ({
   server: {
     host: "127.0.0.1",
   },
-  // No SSR-specific overrides needed; alias resolves to ESM build
+    test: {
+        globals: true,
+        environment: "node",
+        deps: {
+            inline: [/plane/, /@plane/],
+        },
+        transformMode: {
+            web: [/\.[jt]sx?$/], 
+        },
+        include: ["**/*.spec.ts"],
+    },
 }));

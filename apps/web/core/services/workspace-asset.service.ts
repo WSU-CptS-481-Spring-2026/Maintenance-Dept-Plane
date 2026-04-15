@@ -66,4 +66,10 @@ export class WorkspaceAssetService extends APIService {
     }
 
     async deleteWorkspaceAsset(workspaceSlug: string, assetId: string): Promise<void> {
-        return this.delete(`/api/assets/v2/workspaces/${
+        return this.delete(`/api/assets/v2/workspaces/${workspaceSlug}/${assetId}/`)
+            .then((response) => response?.data)
+            .catch((error) => {
+                throw error?.response?.data;
+            });
+    }
+}
