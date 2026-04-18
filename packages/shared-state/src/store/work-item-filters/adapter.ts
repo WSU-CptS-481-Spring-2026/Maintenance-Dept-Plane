@@ -58,11 +58,12 @@ class WorkItemFiltersAdapter extends FilterAdapter<TWorkItemFilterProperty, TWor
         throw new Error("Failed to extract condition data");
       }
 
-      const [property, operator, value] = conditionResult;
+      const [property, operator, value, isNegated] = conditionResult;
       return createConditionNode({
         property,
         operator,
         value,
+        isNegated,
       });
     }
 
@@ -111,7 +112,7 @@ class WorkItemFiltersAdapter extends FilterAdapter<TWorkItemFilterProperty, TWor
     expression: TFilterExpression<TWorkItemFilterProperty>
   ): TWorkItemFilterExpressionData {
     if (isConditionNode(expression)) {
-      return this._createWorkItemFilterConditionData(expression.property, expression.operator, expression.value);
+      return this._createWorkItemFilterConditionData(expression.property, expression.operator, expression.value, expression.isNegated);
     }
 
     // It's a group node
@@ -140,8 +141,8 @@ class WorkItemFiltersAdapter extends FilterAdapter<TWorkItemFilterProperty, TWor
     const hasLogicalOperators = keys.some((key) => key === LOGICAL_OPERATOR.AND);
     if (hasLogicalOperators) return false;
 
-    // All keys must match the work item filter condition key pattern
-    return keys.every((key) => this._isValidWorkItemFilterConditionKey(key));
+    // All keys must match the work item filter condition key pattern or be 'is_negated'
+    return keys.every((key) => key === "is_negated" || this._isValidWorkItemFilterConditionKey(key));
   };
 
   /**
@@ -176,24 +177,29 @@ class WorkItemFiltersAdapter extends FilterAdapter<TWorkItemFilterProperty, TWor
   };
 
   /**
-   * Extracts property, operator and value from work item filter condition data
+   * Extracts property, operator, value, and negation flag from work item filter condition data
    * @param data - The condition data
-   * @returns Tuple of property, operator and value, or null if invalid
+   * @returns Tuple of property, operator, value, and isNegated flag, or null if invalid
    */
   private _extractWorkItemFilterConditionData = (
     data: TWorkItemFilterConditionData
-  ): [TWorkItemFilterProperty, TSupportedOperators, SingleOrArray<TFilterValue>] | null => {
+  ): [TWorkItemFilterProperty, TSupportedOperators, SingleOrArray<TFilterValue>, boolean] | null => {
     const keys = Object.keys(data);
-    if (keys.length !== 1) {
-      console.error("Work item filter condition data must have exactly one key");
+    // Allow 1-2 keys: the condition key and optionally 'is_negated'
+    if (keys.length === 0 || keys.length > 2) {
+      console.error("Work item filter condition data must have 1-2 keys");
       return null;
     }
 
-    const key = keys[0];
-    if (!this._isValidWorkItemFilterConditionKey(key)) {
+    // Find the condition key (not 'is_negated')
+    const key = keys.find((k) => k !== "is_negated");
+    if (!key || !this._isValidWorkItemFilterConditionKey(key)) {
       console.error(`Invalid work item filter condition key: ${key}`);
       return null;
     }
+
+    // Extract negation flag
+    const isNegated = (data as any).is_negated === true;
 
     // Find the last occurrence of '__' to separate property from operator
     const lastDoubleUnderscoreIndex = key.lastIndexOf("__");
@@ -205,7 +211,7 @@ class WorkItemFiltersAdapter extends FilterAdapter<TWorkItemFilterProperty, TWor
     // Parse comma-separated values
     const parsedValue = MULTI_VALUE_OPERATORS.includes(operator) ? this._parseFilterValue(rawValue) : rawValue;
 
-    return [property as TWorkItemFilterProperty, operator, parsedValue];
+    return [property as TWorkItemFilterProperty, operator, parsedValue, isNegated];
   };
 
   /**
@@ -237,25 +243,34 @@ class WorkItemFiltersAdapter extends FilterAdapter<TWorkItemFilterProperty, TWor
   };
 
   /**
-   * Creates TWorkItemFilterConditionData from property, operator and value
+   * Creates TWorkItemFilterConditionData from property, operator, value, and negation flag
    * @param property - The filter property key
    * @param operator - The filter operator
    * @param value - The filter value
+   * @param isNegated - Whether the condition is negated
    * @returns The condition data object
    */
   private _createWorkItemFilterConditionData = (
     property: TWorkItemFilterProperty,
     operator: TSupportedOperators,
-    value: SingleOrArray<TFilterValue>
+    value: SingleOrArray<TFilterValue>,
+    isNegated?: boolean
   ): TWorkItemFilterConditionData => {
     const conditionKey = `${property}__${operator}`;
 
     // Convert value to string format
     const stringValue = Array.isArray(value) ? value.join(",") : value;
 
-    return {
+    const conditionData: TWorkItemFilterConditionData = {
       [conditionKey]: stringValue,
     } as TWorkItemFilterConditionData;
+
+    // Include is_negated field only when true
+    if (isNegated) {
+      (conditionData as any).is_negated = true;
+    }
+
+    return conditionData;
   };
 }
 

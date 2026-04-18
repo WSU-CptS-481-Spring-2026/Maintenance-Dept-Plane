@@ -77,6 +77,7 @@ export interface IFilterInstance<P extends TFilterProperty, E extends TExternalF
   adapter: IFilterAdapter<P, E>;
   configManager: IFilterConfigManager<P>;
   onExpressionChange?: (expression: E) => void;
+  toggleConditionNegation: (conditionId: string) => void;
   // computed
   hasActiveFilters: boolean;
   hasChanges: boolean;
@@ -199,6 +200,7 @@ export class FilterInstance<P extends TFilterProperty, E extends TExternalFilter
       removeCondition: action,
       clearFilters: action,
       saveView: action,
+      toggleConditionNegation: action,
       updateView: action,
       updateExpressionOptions: action,
     });
@@ -312,7 +314,33 @@ export class FilterInstance<P extends TFilterProperty, E extends TExternalFilter
   }
 
   // ------------ actions ------------
+    /**
+   * This method restructures the expression to apply or remove negation from the specified condition.
+   * @param conditionId - The id of the condition to toggle negation for.
+   */
+  toggleConditionNegation: IFilterInstance<P, E>["toggleConditionNegation"] = action((conditionId) => {
+    if (!this.expression) return;
 
+    const conditionBeforeUpdate = cloneDeep(findNodeById(this.expression, conditionId));
+    if (!conditionBeforeUpdate || conditionBeforeUpdate.type !== FILTER_NODE_TYPE.CONDITION) return;
+
+    const updatedExpression = this.helper.restructureExpressionForOperatorChange(
+      this.expression,
+      conditionId,
+      conditionBeforeUpdate.operator,
+      !(conditionBeforeUpdate.isNegated ?? false),
+      false
+    );
+
+    if (updatedExpression) {
+      this.expression = updatedExpression;
+    }
+
+    if (hasValidValue(conditionBeforeUpdate.value)) {
+      this._notifyExpressionChange();
+    }
+  });
+  
   /**
    * Toggles the visibility of the filter instance.
    * @param isVisible - The visibility to set.

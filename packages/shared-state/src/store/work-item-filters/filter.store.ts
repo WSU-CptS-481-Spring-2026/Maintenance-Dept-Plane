@@ -169,7 +169,7 @@ export class WorkItemFilterStore implements IWorkItemFilterStore {
 
       // No existing condition found - add new condition with AND logic
       if (!conditionNode) {
-        const { operator, isNegation } = getOperatorForPayload(condition.operator);
+        const { operator, isNegation } = getOperatorForPayload(condition.operator, condition.isNegated ?? false);
 
         // Create the condition payload with normalized operator
         const conditionPayload = {

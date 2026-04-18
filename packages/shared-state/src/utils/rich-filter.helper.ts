@@ -33,7 +33,7 @@ export const buildTempFilterExpressionFromConditions = <
     },
   });
   for (const condition of conditions) {
-    const { operator, isNegation } = getOperatorForPayload(condition.operator);
+    const { operator, isNegation } = getOperatorForPayload(condition.operator, condition.isNegated ?? false);
     tempFilterInstance.addCondition(
       LOGICAL_OPERATOR.AND,
       {

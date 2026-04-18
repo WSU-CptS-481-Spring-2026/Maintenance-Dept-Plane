@@ -1,0 +1,42 @@
+/**
+ * Copyright (c) 2023-present Plane Software, Inc. and contributors
+ * SPDX-License-Identifier: AGPL-3.0-only
+ * See the LICENSE file for details.
+ */
+
+import React from "react";
+import { observer } from "mobx-react";
+// plane imports
+import type { IFilterInstance } from "@plane/shared-state";
+import type { TExternalFilter, TFilterProperty } from "@plane/types";
+
+interface FilterItemNegationToggleProps<P extends TFilterProperty, E extends TExternalFilter> {
+  conditionId: string;
+  filter: IFilterInstance<P, E>;
+}
+
+export const FilterItemNegationToggle = observer(function FilterItemNegationToggle<
+  P extends TFilterProperty,
+  E extends TExternalFilter,
+>(props: FilterItemNegationToggleProps<P, E>) {
+  const { conditionId, filter } = props;
+
+  // Derive negation state from the filter store (reactive via MobX observer)
+  const condition = filter.allConditionsForDisplay.find(c => c.id === conditionId);
+  const isNegated = condition?.isNegated ?? false;
+
+  const handleToggleNegation = () => {
+    filter.toggleConditionNegation(conditionId);
+  };
+
+  return (
+    <button
+      onClick={handleToggleNegation}
+      className="px-1.5 text-placeholder hover:text-tertiary focus:outline-none bg-layer-transparent hover:bg-layer-transparent-hover"
+      type="button"
+      aria-label="Toggle negation"
+    >
+      {isNegated ? "exclude" : "include"}
+    </button>
+  );
+});

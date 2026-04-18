@@ -114,9 +114,17 @@ export type TWorkItemFilterProperty = (typeof WORK_ITEM_FILTER_PROPERTY_KEYS)[nu
 
 export type TWorkItemFilterConditionKey = `${TWorkItemFilterProperty}__${TSupportedOperators}`;
 
-export type TWorkItemFilterConditionData = Partial<{
+export type TWorkItemFilterConditionDataLegacy = Partial<{
   [K in TWorkItemFilterConditionKey]: string | boolean | number;
 }>;
+
+/**
+ * Backward-compatible extension for include/exclude mode.
+ * `is_negated` defaults to false when omitted.
+ */
+export type TWorkItemFilterConditionData = TWorkItemFilterConditionDataLegacy & {
+  is_negated?: boolean;
+};
 
 export type TWorkItemFilterAndGroup = {
   [LOGICAL_OPERATOR.AND]: TWorkItemFilterConditionData[];

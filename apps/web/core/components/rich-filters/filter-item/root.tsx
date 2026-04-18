@@ -26,6 +26,7 @@ import { FilterItemContainer } from "./container";
 import { InvalidFilterItem } from "./invalid";
 import { FilterItemLoader } from "./loader";
 import { FilterItemProperty } from "./property";
+import { FilterItemNegationToggle } from "./negation-toggle";
 
 export interface IFilterItemProps<P extends TFilterProperty, E extends TExternalFilter> {
   condition: TFilterConditionNodeForDisplay<P, TFilterValue>;
@@ -59,7 +60,7 @@ export const FilterItem = observer(function FilterItem<P extends TFilterProperty
 
   const handleOperatorChange = (operator: TAllAvailableOperatorsForDisplay) => {
     if (operator) {
-      const { operator: positiveOperator, isNegation } = getOperatorForPayload(operator);
+      const { operator: positiveOperator, isNegation } = getOperatorForPayload(operator, condition.isNegated ?? false);
       filter.updateConditionOperator(condition.id, positiveOperator, isNegation);
     }
   };
@@ -85,6 +86,9 @@ export const FilterItem = observer(function FilterItem<P extends TFilterProperty
 
   return (
     <FilterItemContainer conditionValue={condition.value} showTransition={showTransition}>
+      {/* Negation Toggle */}
+      {!isDisabled && <FilterItemNegationToggle conditionId={condition.id} filter={filter} />}
+      
       {/* Property section */}
       <FilterItemProperty
         conditionId={condition.id}

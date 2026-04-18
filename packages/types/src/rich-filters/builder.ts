@@ -18,6 +18,7 @@ export type TFilterConditionForBuild<P extends TFilterProperty, V extends TFilte
   property: P;
   operator: TAllAvailableOperatorsForDisplay;
   value: SingleOrArray<V>;
+  isNegated?: boolean; // Flag to indicate if the condition is negated (e.g., "is not", "not between")
 };
 
 /**
