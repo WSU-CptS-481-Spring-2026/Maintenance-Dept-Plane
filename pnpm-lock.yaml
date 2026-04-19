@@ -449,7 +449,7 @@ importers:
         version: 8.18.1
       '@vitest/coverage-v8':
         specifier: ^4.0.8
-        version: 4.0.17(vitest@4.0.15(@opentelemetry/api@1.9.0)(@types/node@22.12.0)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.1))
+        version: 4.0.17(vitest@4.0.15)
       pdf-parse:
         specifier: ^2.4.5
         version: 2.4.5
@@ -814,7 +814,7 @@ importers:
         version: 18.3.1
       '@vitest/coverage-v8':
         specifier: ^4.0.17
-        version: 4.0.17(vitest@4.0.15(@opentelemetry/api@1.9.0)(@types/node@22.12.0)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.1))
+        version: 4.0.17(vitest@4.0.15)
       '@vitest/ui':
         specifier: ^4.1.4
         version: 4.1.4(vitest@4.0.15)
@@ -1372,6 +1372,9 @@ importers:
       '@atlaskit/pragmatic-drag-and-drop-hitbox':
         specifier: 'catalog:'
         version: 1.1.0
+      '@blueprintjs/colors':
+        specifier: ^4.2.1
+        version: 4.2.1
       '@blueprintjs/core':
         specifier: ^4.16.3
         version: 4.20.2(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1429,6 +1432,9 @@ importers:
       tailwind-merge:
         specifier: 3.4.0
         version: 3.4.0
+      tslib:
+        specifier: ^2.8.1
+        version: 2.8.1
       use-font-face-observer:
         specifier: ^1.2.2
         version: 1.3.0(react@18.3.1)
@@ -13705,7 +13711,7 @@ snapshots:
   '@unrs/resolver-binding-win32-x64-msvc@1.11.1':
     optional: true
 
-  '@vitest/coverage-v8@4.0.17(vitest@4.0.15(@opentelemetry/api@1.9.0)(@types/node@22.12.0)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.1))':
+  '@vitest/coverage-v8@4.0.17(vitest@4.0.15)':
     dependencies:
       '@bcoe/v8-coverage': 1.0.2
       '@vitest/utils': 4.0.17
