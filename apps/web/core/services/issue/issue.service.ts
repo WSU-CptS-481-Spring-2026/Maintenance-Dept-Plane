@@ -35,6 +35,10 @@ type TApiErrorWithResponse = {
   response?: unknown;
 };
 
+type TIssueQueryParams = Partial<Record<string, string | number | boolean | null | undefined>>;
+
+type TApiMutationResponse = Record<string, unknown> | null;
+
 const unwrapData = <T>(response: TApiResponse<T>): T => response.data;
 
 const throwResponseData = (error: unknown): never => {
@@ -64,11 +68,11 @@ export class IssueService extends APIService {
   async getIssuesFromServer(
     workspaceSlug: string,
     projectId: string,
-    queries?: any,
+    queries?: TIssueQueryParams,
     config = {}
   ): Promise<TIssuesResponse> {
     const path =
-      (queries.expand as string)?.includes("issue_relation") && !queries.group_by
+      (queries?.expand as string)?.includes("issue_relation") && !queries?.group_by
         ? `/api/workspaces/${workspaceSlug}/projects/${projectId}/${this.serviceType}-detail/`
         : `/api/workspaces/${workspaceSlug}/projects/${projectId}/${this.serviceType}/`;
     return this.get(
@@ -85,7 +89,7 @@ export class IssueService extends APIService {
   async getIssuesForSync(
     workspaceSlug: string,
     projectId: string,
-    queries?: any,
+    queries?: TIssueQueryParams,
     config = {}
   ): Promise<TIssuesResponse> {
     return this.get(
@@ -106,7 +110,11 @@ export class IssueService extends APIService {
     return this.getIssuesFromServer(workspaceSlug, projectId, queries, config);
   }
 
-  async getDeletedIssues(workspaceSlug: string, projectId: string, queries?: any): Promise<TIssuesResponse> {
+  async getDeletedIssues(
+    workspaceSlug: string,
+    projectId: string,
+    queries?: TIssueQueryParams
+  ): Promise<TIssuesResponse> {
     return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/deleted-issues/`, {
       params: queries,
     })
@@ -117,7 +125,7 @@ export class IssueService extends APIService {
   async getIssuesWithParams(
     workspaceSlug: string,
     projectId: string,
-    queries?: any
+    queries?: TIssueQueryParams
   ): Promise<TIssue[] | { [key: string]: TIssue[] }> {
     return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/${this.serviceType}/`, {
       params: queries,
@@ -126,7 +134,12 @@ export class IssueService extends APIService {
       .catch(throwResponseData);
   }
 
-  async retrieve(workspaceSlug: string, projectId: string, issueId: string, queries?: any): Promise<TIssue> {
+  async retrieve(
+    workspaceSlug: string,
+    projectId: string,
+    issueId: string,
+    queries?: TIssueQueryParams
+  ): Promise<TIssue> {
     return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/${this.serviceType}/${issueId}/`, {
       params: queries,
     })
@@ -203,7 +216,10 @@ export class IssueService extends APIService {
       .catch(throwResponse);
   }
 
-  async getIssueDisplayProperties(workspaceSlug: string, projectId: string): Promise<any> {
+  async getIssueDisplayProperties(
+    workspaceSlug: string,
+    projectId: string
+  ): Promise<IIssueDisplayProperties> {
     return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/issue-display-properties/`)
       .then(unwrapData)
       .catch(throwResponseData);
@@ -213,7 +229,7 @@ export class IssueService extends APIService {
     workspaceSlug: string,
     projectId: string,
     data: IIssueDisplayProperties
-  ): Promise<any> {
+  ): Promise<IIssueDisplayProperties> {
     return this.post(`/api/workspaces/${workspaceSlug}/projects/${projectId}/issue-display-properties/`, {
       properties: data,
     })
@@ -221,13 +237,22 @@ export class IssueService extends APIService {
       .catch(throwResponseData);
   }
 
-  async patchIssue(workspaceSlug: string, projectId: string, issueId: string, data: Partial<TIssue>): Promise<any> {
+  async patchIssue(
+    workspaceSlug: string,
+    projectId: string,
+    issueId: string,
+    data: Partial<TIssue>
+  ): Promise<TIssue> {
     return this.patch(`/api/workspaces/${workspaceSlug}/projects/${projectId}/${this.serviceType}/${issueId}/`, data)
       .then(unwrapData)
       .catch(throwResponseData);
   }
 
-  async deleteIssue(workspaceSlug: string, projectId: string, issuesId: string): Promise<any> {
+  async deleteIssue(
+    workspaceSlug: string,
+    projectId: string,
+    issuesId: string
+  ): Promise<TApiMutationResponse> {
     return this.delete(`/api/workspaces/${workspaceSlug}/projects/${projectId}/${this.serviceType}/${issuesId}/`)
       .then(unwrapData)
       .catch(throwResponseData);
@@ -308,7 +333,12 @@ export class IssueService extends APIService {
       .catch(throwResponse);
   }
 
-  async deleteIssueLink(workspaceSlug: string, projectId: string, issueId: string, linkId: string): Promise<any> {
+  async deleteIssueLink(
+    workspaceSlug: string,
+    projectId: string,
+    issueId: string,
+    linkId: string
+  ): Promise<TApiMutationResponse> {
     return this.delete(
       `/api/workspaces/${workspaceSlug}/projects/${projectId}/${this.serviceType}/${issueId}/${this.serviceType === EIssueServiceType.EPICS ? "links" : "issue-links"}/${linkId}/`
     )
@@ -316,7 +346,11 @@ export class IssueService extends APIService {
       .catch(throwResponseData);
   }
 
-  async bulkOperations(workspaceSlug: string, projectId: string, data: TBulkOperationsPayload): Promise<any> {
+  async bulkOperations(
+    workspaceSlug: string,
+    projectId: string,
+    data: TBulkOperationsPayload
+  ): Promise<TApiMutationResponse> {
     return this.post(`/api/workspaces/${workspaceSlug}/projects/${projectId}/bulk-operation-issues/`, data)
       .then(async (response) => unwrapData(response))
       .catch(throwResponseData);
@@ -328,7 +362,7 @@ export class IssueService extends APIService {
     data: {
       issue_ids: string[];
     }
-  ): Promise<any> {
+  ): Promise<TApiMutationResponse> {
     return this.delete(`/api/workspaces/${workspaceSlug}/projects/${projectId}/bulk-delete-issues/`, data)
       .then(async (response) => unwrapData(response))
       .catch(throwResponseData);
@@ -361,7 +395,11 @@ export class IssueService extends APIService {
       .catch(throwResponseData);
   }
 
-  async unsubscribeFromIssueNotifications(workspaceSlug: string, projectId: string, issueId: string): Promise<any> {
+  async unsubscribeFromIssueNotifications(
+    workspaceSlug: string,
+    projectId: string,
+    issueId: string
+  ): Promise<TApiMutationResponse> {
     return this.delete(
       `/api/workspaces/${workspaceSlug}/projects/${projectId}/${this.serviceType}/${issueId}/subscribe/`
     )
@@ -369,7 +407,11 @@ export class IssueService extends APIService {
       .catch(throwResponseData);
   }
 
-  async subscribeToIssueNotifications(workspaceSlug: string, projectId: string, issueId: string): Promise<any> {
+  async subscribeToIssueNotifications(
+    workspaceSlug: string,
+    projectId: string,
+    issueId: string
+  ): Promise<TApiMutationResponse> {
     return this.post(`/api/workspaces/${workspaceSlug}/projects/${projectId}/${this.serviceType}/${issueId}/subscribe/`)
       .then(unwrapData)
       .catch(throwResponseData);
@@ -381,7 +423,7 @@ export class IssueService extends APIService {
     data: {
       issue_ids: string[];
     }
-  ): Promise<any> {
+  ): Promise<TApiMutationResponse> {
     return this.post(`/api/workspaces/${workspaceSlug}/projects/${projectId}/bulk-subscribe-issues/`, data)
       .then(unwrapData)
       .catch(throwResponseData);
@@ -404,7 +446,7 @@ export class IssueService extends APIService {
     workspaceSlug: string,
     project_identifier: string,
     issue_sequence: string,
-    queries?: any
+    queries?: TIssueQueryParams
   ): Promise<TIssue> {
     return this.get(`/api/workspaces/${workspaceSlug}/work-items/${project_identifier}-${issue_sequence}/`, {
       params: queries,
