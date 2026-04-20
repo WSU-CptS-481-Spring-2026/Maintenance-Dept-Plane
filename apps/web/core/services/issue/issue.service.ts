@@ -143,7 +143,7 @@ export class IssueService extends APIService {
     return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/${this.serviceType}/${issueId}/`, {
       params: queries,
     })
-      .then(async (response: TApiResponse<TIssue>) => {
+      .then((response: TApiResponse<TIssue>) => {
         // add is_epic flag when the service type is epic
         if (response.data && this.serviceType === EIssueServiceType.EPICS) {
           response.data.is_epic = true;
@@ -157,7 +157,7 @@ export class IssueService extends APIService {
     return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/${this.serviceType}/list/`, {
       params: { issues: issueIds.join(",") },
     })
-      .then(async (response: TApiResponse<TIssue[]>) => response.data)
+      .then((response: TApiResponse<TIssue[]>) => response.data)
       .catch(throwResponseData);
   }
 
@@ -352,7 +352,7 @@ export class IssueService extends APIService {
     data: TBulkOperationsPayload
   ): Promise<TApiMutationResponse> {
     return this.post(`/api/workspaces/${workspaceSlug}/projects/${projectId}/bulk-operation-issues/`, data)
-      .then(async (response) => unwrapData(response))
+      .then(unwrapData)
       .catch(throwResponseData);
   }
 
@@ -364,7 +364,7 @@ export class IssueService extends APIService {
     }
   ): Promise<TApiMutationResponse> {
     return this.delete(`/api/workspaces/${workspaceSlug}/projects/${projectId}/bulk-delete-issues/`, data)
-      .then(async (response) => unwrapData(response))
+      .then(unwrapData)
       .catch(throwResponseData);
   }
 
@@ -378,7 +378,7 @@ export class IssueService extends APIService {
     archived_at: string;
   }> {
     return this.post(`/api/workspaces/${workspaceSlug}/projects/${projectId}/bulk-archive-issues/`, data)
-      .then(async (response) => unwrapData(response))
+      .then(unwrapData)
       .catch(throwResponseData);
   }
 
@@ -451,7 +451,7 @@ export class IssueService extends APIService {
     return this.get(`/api/workspaces/${workspaceSlug}/work-items/${project_identifier}-${issue_sequence}/`, {
       params: queries,
     })
-      .then(async (response: TApiResponse<TIssue>) => {
+      .then((response: TApiResponse<TIssue>) => {
         // add is_epic flag when the service type is epic
         if (response.data && this.serviceType === EIssueServiceType.EPICS) {
           response.data.is_epic = true;
