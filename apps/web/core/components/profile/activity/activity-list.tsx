@@ -32,7 +32,6 @@ export const ActivityList = observer(function ActivityList(props: Props) {
   // derived values
   const workspaceId = getWorkspaceBySlug(workspaceSlug?.toString() ?? "")?.id ?? "";
 
-  // TODO: refactor this component
   return (
     <>
       {activity ? (
