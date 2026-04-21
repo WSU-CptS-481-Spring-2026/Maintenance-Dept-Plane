@@ -4,6 +4,7 @@
 
 # Python imports
 import json
+from dataclasses import dataclass
 
 
 # Third Party imports
@@ -46,32 +47,42 @@ def extract_ids(data: dict | None, primary_key: str, fallback_key: str) -> set[s
     return {str(x) for x in data.get(fallback_key, [])}
 
 
-# Track Changes in name
-def track_name(
-    requested_data,
-    current_instance,
-    issue_id,
-    project_id,
-    workspace_id,
-    actor_id,
-    issue_activities,
-    epoch,
-):
-    if current_instance.get("name") != requested_data.get("name"):
-        issue_activities.append(
-            IssueActivity(
-                issue_id=issue_id,
-                actor_id=actor_id,
-                verb="updated",
-                old_value=current_instance.get("name"),
-                new_value=requested_data.get("name"),
-                field="name",
-                project_id=project_id,
-                workspace_id=workspace_id,
-                comment="updated the name to",
-                epoch=epoch,
+@dataclass(frozen=True)
+class _SimpleFieldConfig:
+    """Describes a scalar field whose changes map 1-to-1 to a single IssueActivity row."""
+
+    field_key: str
+    activity_field: str
+    comment: str
+    empty_value: str = ""
+
+
+def _make_simple_tracker(config: _SimpleFieldConfig):
+    """Return a tracker function for a simple scalar field with the standard 8-arg signature."""
+
+    def _tracker(requested_data, current_instance, issue_id, project_id, workspace_id, actor_id, issue_activities, epoch):
+        old_val = current_instance.get(config.field_key)
+        new_val = requested_data.get(config.field_key)
+        if old_val != new_val:
+            issue_activities.append(
+                IssueActivity(
+                    issue_id=issue_id,
+                    actor_id=actor_id,
+                    verb="updated",
+                    old_value=old_val if old_val is not None else config.empty_value,
+                    new_value=new_val if new_val is not None else config.empty_value,
+                    field=config.activity_field,
+                    project_id=project_id,
+                    workspace_id=workspace_id,
+                    comment=config.comment,
+                    epoch=epoch,
+                )
             )
-        )
+
+    return _tracker
+
+
+track_name = _make_simple_tracker(_SimpleFieldConfig("name", "name", "updated the name to"))
 
 
 # Track issue description
@@ -157,32 +168,7 @@ def track_parent(
         )
 
 
-# Track changes in priority
-def track_priority(
-    requested_data,
-    current_instance,
-    issue_id,
-    project_id,
-    workspace_id,
-    actor_id,
-    issue_activities,
-    epoch,
-):
-    if current_instance.get("priority") != requested_data.get("priority"):
-        issue_activities.append(
-            IssueActivity(
-                issue_id=issue_id,
-                actor_id=actor_id,
-                verb="updated",
-                old_value=current_instance.get("priority"),
-                new_value=requested_data.get("priority"),
-                field="priority",
-                project_id=project_id,
-                workspace_id=workspace_id,
-                comment="updated the priority to",
-                epoch=epoch,
-            )
-        )
+track_priority = _make_simple_tracker(_SimpleFieldConfig("priority", "priority", "updated the priority to"))
 
 
 # Track changes in state of the issue
@@ -226,64 +212,14 @@ def track_state(
         )
 
 
-# Track changes in issue target date
-def track_target_date(
-    requested_data,
-    current_instance,
-    issue_id,
-    project_id,
-    workspace_id,
-    actor_id,
-    issue_activities,
-    epoch,
-):
-    if current_instance.get("target_date") != requested_data.get("target_date"):
-        issue_activities.append(
-            IssueActivity(
-                issue_id=issue_id,
-                actor_id=actor_id,
-                verb="updated",
-                old_value=(
-                    current_instance.get("target_date") if current_instance.get("target_date") is not None else ""
-                ),
-                new_value=(requested_data.get("target_date") if requested_data.get("target_date") is not None else ""),
-                field="target_date",
-                project_id=project_id,
-                workspace_id=workspace_id,
-                comment="updated the target date to",
-                epoch=epoch,
-            )
-        )
+track_target_date = _make_simple_tracker(
+    _SimpleFieldConfig("target_date", "target_date", "updated the target date to")
+)
 
 
-# Track changes in issue start date
-def track_start_date(
-    requested_data,
-    current_instance,
-    issue_id,
-    project_id,
-    workspace_id,
-    actor_id,
-    issue_activities,
-    epoch,
-):
-    if current_instance.get("start_date") != requested_data.get("start_date"):
-        issue_activities.append(
-            IssueActivity(
-                issue_id=issue_id,
-                actor_id=actor_id,
-                verb="updated",
-                old_value=(
-                    current_instance.get("start_date") if current_instance.get("start_date") is not None else ""
-                ),
-                new_value=(requested_data.get("start_date") if requested_data.get("start_date") is not None else ""),
-                field="start_date",
-                project_id=project_id,
-                workspace_id=workspace_id,
-                comment="updated the start date to ",
-                epoch=epoch,
-            )
-        )
+track_start_date = _make_simple_tracker(
+    _SimpleFieldConfig("start_date", "start_date", "updated the start date to ")
+)
 
 
 # Track changes in issue labels
