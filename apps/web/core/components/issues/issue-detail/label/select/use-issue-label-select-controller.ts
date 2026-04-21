@@ -7,17 +7,32 @@
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { EUserPermissionsLevel, getRandomLabelColor } from "@plane/constants";
+import type { IIssueLabel } from "@plane/types";
 import { EUserProjectRoles } from "@plane/types";
 import { getTabIndex } from "@plane/utils";
 import { useLabel } from "@/hooks/store/use-label";
 import { useUserPermissions } from "@/hooks/store/user";
 import { usePlatformOS } from "@/hooks/use-platform-os";
-import type { IIssueLabelSelect } from "./label-select";
+import type { IIssueLabelSelect } from "./issue-label-select.types";
 
 type UseIssueLabelSelectControllerProps = Pick<
   IIssueLabelSelect,
   "workspaceSlug" | "projectId" | "values" | "onSelect" | "onAddLabel"
 >;
+
+export type TIssueLabelSelectControllerResult = {
+  baseTabIndex: number;
+  canCreateLabel: boolean;
+  fetchLabels: () => Promise<void>;
+  handleAddLabel: (labelName: string) => Promise<void>;
+  isLoading: boolean;
+  issueLabels: string[];
+  projectLabels: IIssueLabel[] | undefined;
+  query: string;
+  searchInputKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
+  setQuery: (value: string) => void;
+  submitting: boolean;
+};
 
 export const useIssueLabelSelectController = ({
   workspaceSlug,
@@ -25,7 +40,7 @@ export const useIssueLabelSelectController = ({
   values,
   onSelect,
   onAddLabel,
-}: UseIssueLabelSelectControllerProps) => {
+}: UseIssueLabelSelectControllerProps): TIssueLabelSelectControllerResult => {
   const { isMobile } = usePlatformOS();
   const { fetchProjectLabels, getProjectLabels } = useLabel();
   const { allowPermissions } = useUserPermissions();
@@ -43,7 +58,7 @@ export const useIssueLabelSelectController = ({
     Boolean(projectId) &&
     allowPermissions([EUserProjectRoles.ADMIN], EUserPermissionsLevel.PROJECT, workspaceSlug, projectId);
 
-  const projectLabels = getProjectLabels(projectId);
+  const projectLabels = getProjectLabels(projectId) as IIssueLabel[] | undefined;
   const issueLabels = values ?? [];
   const { baseTabIndex } = getTabIndex(undefined, isMobile);
 
@@ -53,6 +68,8 @@ export const useIssueLabelSelectController = ({
     setIsLoading(true);
     try {
       await fetchProjectLabels(workspaceSlug, projectId);
+    } catch {
+      // Keep UI responsive if label fetch fails; caller can retry from UI.
     } finally {
       setIsLoading(false);
     }
@@ -68,12 +85,14 @@ export const useIssueLabelSelectController = ({
       const nextValues = [...latestValuesRef.current, label.id];
       onSelect(Array.from(new Set(nextValues)));
       setQuery("");
+    } catch {
+      // No-op for now; upstream handlers can surface errors via toast/state.
     } finally {
       setSubmitting(false);
     }
   };
 
-  const searchInputKeyDown = async (e: KeyboardEvent<HTMLInputElement>) => {
+  const searchInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (query !== "" && e.key === "Escape") {
       e.stopPropagation();
       setQuery("");
@@ -82,7 +101,7 @@ export const useIssueLabelSelectController = ({
     if (query !== "" && e.key === "Enter" && !e.nativeEvent.isComposing && canCreateLabel) {
       e.stopPropagation();
       e.preventDefault();
-      await handleAddLabel(query);
+      void handleAddLabel(query);
     }
   };
 

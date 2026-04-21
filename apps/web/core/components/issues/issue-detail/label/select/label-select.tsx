@@ -12,19 +12,10 @@ import { Combobox } from "@headlessui/react";
 import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import { PlusIcon } from "@plane/propel/icons";
-import type { IIssueLabel } from "@plane/types";
 import { IssueLabelSelectOptionsPanel } from "./issue-label-select-options-panel";
 import type { TIssueLabelSelectOption } from "./issue-label-select-options-panel";
+import type { IIssueLabelSelect } from "./issue-label-select.types";
 import { useIssueLabelSelectController } from "./use-issue-label-select-controller";
-//constants
-export interface IIssueLabelSelect {
-  workspaceSlug: string;
-  projectId: string;
-  issueId: string;
-  values: string[];
-  onSelect: (_labelIds: string[]) => void;
-  onAddLabel: (workspaceSlug: string, projectId: string, data: Partial<IIssueLabel>) => Promise<IIssueLabel>;
-}
 
 export const IssueLabelSelect = observer(function IssueLabelSelect(props: IIssueLabelSelect) {
   const { workspaceSlug, projectId, issueId, values, onSelect, onAddLabel } = props;
@@ -38,7 +29,6 @@ export const IssueLabelSelect = observer(function IssueLabelSelect(props: IIssue
     fetchLabels,
     handleAddLabel,
     isLoading,
-    issueLabels,
     projectLabels,
     query,
     searchInputKeyDown,
@@ -51,6 +41,10 @@ export const IssueLabelSelect = observer(function IssueLabelSelect(props: IIssue
     onSelect,
     onAddLabel,
   });
+  const selectedIssueLabels: string[] = values ?? [];
+  const onSearchInputKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
+    void searchInputKeyDown(e);
+  };
 
   const options: TIssueLabelSelectOption[] = (projectLabels ?? []).map((label) => ({
     value: label.id,
@@ -92,8 +86,8 @@ export const IssueLabelSelect = observer(function IssueLabelSelect(props: IIssue
       <Combobox
         as="div"
         className="size-full flex-shrink-0 text-left"
-        value={issueLabels}
-        onChange={(value) => onSelect(value)}
+        value={selectedIssueLabels}
+        onChange={(value: string[]) => onSelect(value)}
         multiple
       >
         <Combobox.Button as={Fragment}>
@@ -123,7 +117,7 @@ export const IssueLabelSelect = observer(function IssueLabelSelect(props: IIssue
           noResultsText={t("common.search.no_matching_results")}
           popperStyle={styles.popper}
           query={query}
-          searchInputKeyDown={searchInputKeyDown}
+          searchInputKeyDown={onSearchInputKeyDown}
           searchPlaceholder={t("common.search.label")}
           setPopperElement={setPopperElement}
           setQuery={setQuery}

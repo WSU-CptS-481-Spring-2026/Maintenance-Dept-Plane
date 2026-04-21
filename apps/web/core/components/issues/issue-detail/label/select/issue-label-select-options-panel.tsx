@@ -28,7 +28,7 @@ type Props = {
   noResultsText: string;
   popperStyle: React.CSSProperties;
   query: string;
-  searchInputKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => Promise<void>;
+  searchInputKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   searchPlaceholder: string;
   setPopperElement: (element: HTMLDivElement | null) => void;
   setQuery: (value: string) => void;
@@ -117,7 +117,7 @@ export const IssueLabelSelectOptionsPanel = ({
           >
             {query.length ? (
               <>
-                {/* TODO: Translate here */}+ Add <span className="text-primary">&quot;{query}&quot;</span> to labels
+                {/* TODO: Translate here */}Add <span className="text-primary">&quot;{query}&quot;</span> to labels
               </>
             ) : (
               createTypeText
