@@ -4,22 +4,15 @@
  * See the LICENSE file for details.
  */
 
-import { useEffect } from "react";
 import { observer } from "mobx-react";
-import useSWR from "swr";
 import { ActivitySettingsLoader } from "@/components/ui/loader/settings/activity";
-// constants
-import { USER_ACTIVITY } from "@/constants/fetch-keys";
 // hooks
 import { useUser } from "@/hooks/store/user";
-// services
-import { UserService } from "@/services/user.service";
 import { ActivityChangeItem } from "./activity-change-item";
 import { ActivityCommentItem } from "./activity-comment-item";
 import type { ActivityItem } from "./activity-helpers";
 import { isCommentActivity, shouldRenderChangeActivity } from "./activity-helpers";
-
-const userService = new UserService();
+import { useProfileActivityFeed } from "./use-profile-activity-feed";
 
 type Props = {
   cursor: string;
@@ -33,27 +26,15 @@ export const ProfileActivityListPage = observer(function ProfileActivityListPage
   const { cursor, perPage, updateResultsCount, updateTotalPages, updateEmptyState } = props;
   // store hooks
   const { data: currentUser } = useUser();
-
-  const { data: userProfileActivity } = useSWR(
-    USER_ACTIVITY({
-      cursor,
-    }),
-    () =>
-      userService.getUserActivity({
-        cursor,
-        per_page: perPage,
-      })
-  );
-
-  useEffect(() => {
-    if (!userProfileActivity) return;
-
-    // if no results found then show empty state
-    if (userProfileActivity.total_results === 0) updateEmptyState(true);
-
-    updateTotalPages(userProfileActivity.total_pages);
-    updateResultsCount(userProfileActivity.results.length);
-  }, [updateResultsCount, updateTotalPages, userProfileActivity, updateEmptyState]);
+  const userProfileActivity = useProfileActivityFeed({
+    cursor,
+    perPage,
+    handlers: {
+      updateResultsCount,
+      updateTotalPages,
+      updateEmptyState,
+    },
+  });
 
   return userProfileActivity ? (
     <ul>
