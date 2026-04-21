@@ -10,18 +10,11 @@ import { usePopper } from "react-popper";
 import { Loader } from "lucide-react";
 import { Combobox } from "@headlessui/react";
 // plane imports
-import { EUserPermissionsLevel, getRandomLabelColor } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
 import { CheckIcon, SearchIcon, PlusIcon } from "@plane/propel/icons";
 import type { IIssueLabel } from "@plane/types";
-import { EUserProjectRoles } from "@plane/types";
-// helpers
-import { getTabIndex } from "@plane/utils";
-// hooks
-import { useLabel } from "@/hooks/store/use-label";
-import { useUserPermissions } from "@/hooks/store/user";
-import { usePlatformOS } from "@/hooks/use-platform-os";
+import { useIssueLabelSelectController } from "./use-issue-label-select-controller";
 //constants
 export interface IIssueLabelSelect {
   workspaceSlug: string;
@@ -29,35 +22,34 @@ export interface IIssueLabelSelect {
   issueId: string;
   values: string[];
   onSelect: (_labelIds: string[]) => void;
-  onAddLabel: (workspaceSlug: string, projectId: string, data: Partial<IIssueLabel>) => Promise<any>;
+  onAddLabel: (workspaceSlug: string, projectId: string, data: Partial<IIssueLabel>) => Promise<IIssueLabel>;
 }
 
 export const IssueLabelSelect = observer(function IssueLabelSelect(props: IIssueLabelSelect) {
   const { workspaceSlug, projectId, issueId, values, onSelect, onAddLabel } = props;
   const { t } = useTranslation();
-  // store hooks
-  const { isMobile } = usePlatformOS();
-  const { fetchProjectLabels, getProjectLabels } = useLabel();
-  const { allowPermissions } = useUserPermissions();
   // states
   const [referenceElement, setReferenceElement] = useState<HTMLButtonElement | null>(null);
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [query, setQuery] = useState("");
-  const [submitting, setSubmitting] = useState<boolean>(false);
-
-  const canCreateLabel =
-    projectId && allowPermissions([EUserProjectRoles.ADMIN], EUserPermissionsLevel.PROJECT, workspaceSlug, projectId);
-
-  const projectLabels = getProjectLabels(projectId);
-
-  const { baseTabIndex } = getTabIndex(undefined, isMobile);
-
-  const fetchLabels = () => {
-    setIsLoading(true);
-    if (!projectLabels && workspaceSlug && projectId)
-      fetchProjectLabels(workspaceSlug, projectId).then(() => setIsLoading(false));
-  };
+  const {
+    baseTabIndex,
+    canCreateLabel,
+    fetchLabels,
+    handleAddLabel,
+    isLoading,
+    issueLabels,
+    projectLabels,
+    query,
+    searchInputKeyDown,
+    setQuery,
+    submitting,
+  } = useIssueLabelSelectController({
+    workspaceSlug,
+    projectId,
+    values,
+    onSelect,
+    onAddLabel,
+  });
 
   const options = (projectLabels ?? []).map((label) => ({
     value: label.id,
@@ -90,30 +82,7 @@ export const IssueLabelSelect = observer(function IssueLabelSelect(props: IIssue
     ],
   });
 
-  const issueLabels = values ?? [];
-
   const label = <span className="text-body-xs-medium text-placeholder">{t("label.select")}</span>;
-
-  const searchInputKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (query !== "" && e.key === "Escape") {
-      e.stopPropagation();
-      setQuery("");
-    }
-
-    if (query !== "" && e.key === "Enter" && !e.nativeEvent.isComposing && canCreateLabel) {
-      e.stopPropagation();
-      e.preventDefault();
-      await handleAddLabel(query);
-    }
-  };
-
-  const handleAddLabel = async (labelName: string) => {
-    setSubmitting(true);
-    const label = await onAddLabel(workspaceSlug, projectId, { name: labelName, color: getRandomLabelColor() });
-    onSelect([...values, label.id]);
-    setQuery("");
-    setSubmitting(false);
-  };
 
   if (!issueId || !values) return <></>;
 
@@ -133,7 +102,9 @@ export const IssueLabelSelect = observer(function IssueLabelSelect(props: IIssue
             variant="tertiary"
             size="sm"
             prependIcon={<PlusIcon />}
-            onClick={() => !projectLabels && fetchLabels()}
+            onClick={() => {
+              void fetchLabels();
+            }}
           >
             {label}
           </Button>
@@ -154,8 +125,10 @@ export const IssueLabelSelect = observer(function IssueLabelSelect(props: IIssue
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={t("common.search.label")}
-                  displayValue={(assigned: any) => assigned?.name}
-                  onKeyDown={searchInputKeyDown}
+                  displayValue={(assigned: { name?: string } | null) => assigned?.name ?? ""}
+                  onKeyDown={(e) => {
+                    void searchInputKeyDown(e);
+                  }}
                   tabIndex={baseTabIndex}
                 />
               </div>
@@ -195,7 +168,7 @@ export const IssueLabelSelect = observer(function IssueLabelSelect(props: IIssue
                     e.preventDefault();
                     e.stopPropagation();
                     if (!query.length) return;
-                    handleAddLabel(query);
+                    void handleAddLabel(query);
                   }}
                   className={`text-left text-secondary ${query.length ? "cursor-pointer" : "cursor-default"}`}
                 >
