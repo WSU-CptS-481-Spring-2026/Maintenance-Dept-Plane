@@ -21,11 +21,13 @@ import {
 type ActivityChangeItemProps = {
   activity: ActivityItem;
   currentUserId: string | undefined;
+  showIssueLink?: boolean;
 };
 
 export const ActivityChangeItem = ({
   activity,
   currentUserId,
+  showIssueLink = true,
 }: ActivityChangeItemProps) => {
   const isNewIssue = isNewIssueActivity(activity);
   const isArchiveRestore = isArchiveRestoreActivity(activity);
@@ -80,7 +82,7 @@ export const ActivityChangeItem = ({
     );
   };
 
-  const message = isNewIssue ? (
+  const message = showIssueLink && isNewIssue ? (
     <span>
       created <IssueLink activity={activity} />
     </span>
