@@ -4,10 +4,8 @@
  * See the LICENSE file for details.
  */
 
-// helpers
 import { STICKIES_PER_PAGE, API_BASE_URL } from "@plane/constants";
 import type { TSticky } from "@plane/types";
-// services
 import { APIService } from "@/services/api.service";
 
 export class StickyService extends APIService {
@@ -15,12 +13,21 @@ export class StickyService extends APIService {
     super(API_BASE_URL);
   }
 
-  async createSticky(workspaceSlug: string, payload: Partial<TSticky>) {
-    return this.post(`/api/workspaces/${workspaceSlug}/stickies/`, payload)
-      .then((res) => res?.data)
-      .catch((err) => {
-        throw err?.response?.data;
-      });
+  private handleError(err: any): never {
+    throw err?.response?.data ?? err;
+  }
+
+  private base(workspaceSlug: string): string {
+    return `/api/workspaces/${workspaceSlug}/stickies`;
+  }
+
+  async createSticky(workspaceSlug: string, payload: Partial<TSticky>): Promise<TSticky> {
+    try {
+      const res = await this.post(`${this.base(workspaceSlug)}/`, payload);
+      return res?.data;
+    } catch (err) {
+      this.handleError(err);
+    }
   }
 
   async getStickies(
@@ -29,40 +36,47 @@ export class StickyService extends APIService {
     query?: string,
     per_page?: number
   ): Promise<{ results: TSticky[]; total_pages: number }> {
-    return this.get(`/api/workspaces/${workspaceSlug}/stickies/`, {
-      params: {
-        cursor,
-        per_page: per_page || STICKIES_PER_PAGE,
-        query,
-      },
-    })
-      .then((res) => res?.data)
-      .catch((err) => {
-        throw err?.response?.data;
+    try {
+      const res = await this.get(`${this.base(workspaceSlug)}/`, {
+        params: {
+          cursor,
+          per_page: per_page ?? STICKIES_PER_PAGE,
+          query,
+        },
       });
+      return res?.data;
+    } catch (err) {
+      this.handleError(err);
+    }
   }
 
-  async getSticky(workspaceSlug: string, id: string) {
-    return this.get(`/api/workspaces/${workspaceSlug}/stickies/${id}`)
-      .then((res) => res?.data)
-      .catch((err) => {
-        throw err?.response?.data;
-      });
+  async getSticky(workspaceSlug: string, id: string): Promise<TSticky> {
+    try {
+      const res = await this.get(`${this.base(workspaceSlug)}/${id}`);
+      return res?.data;
+    } catch (err) {
+      this.handleError(err);
+    }
   }
 
-  async updateSticky(workspaceSlug: string, id: string, data: Partial<TSticky>) {
-    return await this.patch(`/api/workspaces/${workspaceSlug}/stickies/${id}/`, data)
-      .then((res) => res?.data)
-      .catch((err) => {
-        throw err?.response?.data;
-      });
+  async updateSticky(
+    workspaceSlug: string,
+    id: string,
+    data: Partial<TSticky>
+  ): Promise<TSticky> {
+    try {
+      const res = await this.patch(`${this.base(workspaceSlug)}/${id}/`, data);
+      return res?.data;
+    } catch (err) {
+      this.handleError(err);
+    }
   }
 
-  async deleteSticky(workspaceSlug: string, id: string) {
-    return await this.delete(`/api/workspaces/${workspaceSlug}/stickies/${id}`)
-      .then((res) => res?.data)
-      .catch((err) => {
-        throw err?.response?.data;
-      });
+  async deleteSticky(workspaceSlug: string, id: string): Promise<void> {
+    try {
+      await this.delete(`${this.base(workspaceSlug)}/${id}`);
+    } catch (err) {
+      this.handleError(err);
+    }
   }
 }

@@ -1,15 +1,23 @@
 {
+  "extends": "../../packages/typescript-config/react-router.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "rootDirs": [".", "./.react-router/types"],
     "paths": {
-      "@/*": ["./core/*"],
-      "@/app/*": ["./app/*"],
-      "@/helpers/*": ["./helpers/*"],
-      "@/plane-web/*": ["./ce/*"],
-      "@/styles/*": ["./styles/*"],
-      "app/*": ["./app/*"],
-      "package.json": ["./package.json"],
-      "ce/*": ["./ce/*"]
+      "@/*": [ "./core/*" ],
+      "@/services/*": [ "./core/services/*" ],
+      "@/app/*": [ "./app/*" ],
+      "@/helpers/*": [ "./helpers/*" ],
+      "@/plane-web/*": [ "./ce/*" ],
+      "@/styles/*": [ "./styles/*" ],
+      "app/*": [ "./app/*" ],
+      "package.json": [ "./package.json" ],
+      "ce/*": [ "./ce/*" ],
+      "@plane/constants": [ "./core/constants" ],
+      "@plane/services": [ "./core/services" ],
+      "@plane/utils": [ "./core/lib" ],
+      "@plane/types": [ "./core/types" ]
+
     },
     "strictNullChecks": true,
     "exactOptionalPropertyTypes": false,
@@ -19,6 +27,5 @@
     "noImplicitOverride": false,
     "types": ["vite/client"]
   },
-  "extends": "@plane/typescript-config/react-router.json",
   "include": ["**/*", "**/.server/**/*", "**/.client/**/*", ".react-router/types/**/*"]
 }

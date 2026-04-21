@@ -14,7 +14,10 @@
     "check:types": "react-router typegen && tsc --noEmit",
     "check:format": "prettier . --cache --check",
     "fix:lint": "eslint . --cache --cache-location node_modules/.cache/eslint/ --fix --max-warnings=14367",
-    "fix:format": "prettier . --cache --write"
+    "fix:format": "prettier . --cache --write",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "catalog:",
@@ -39,6 +42,7 @@
     "@popperjs/core": "^2.11.8",
     "@react-pdf/renderer": "^3.4.5",
     "@react-router/node": "catalog:",
+    "@sentry/browser": "^10.40.0",
     "@sentry/react-router": "catalog:",
     "@tanstack/react-table": "^8.21.3",
     "axios": "catalog:",
@@ -85,8 +89,11 @@
     "@types/react": "catalog:",
     "@types/react-color": "^3.0.6",
     "@types/react-dom": "catalog:",
+    "@vitest/coverage-v8": "^4.0.17",
+    "@vitest/ui": "^4.1.4",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.0.15"
   }
 }

@@ -14,33 +14,30 @@ import { renderFormattedDate, renderFormattedPayloadDate } from "@plane/utils";
 
 // -------------------- DEPRECATED --------------------
 
+const payloadDateRange = (start: Date, end: Date): string => {
+  const firstDay = renderFormattedPayloadDate(start);
+  const lastDay = renderFormattedPayloadDate(end);
+  return `${firstDay};after,${lastDay};before`;
+};
+
 /**
  * @description returns date range based on the duration filter
  * @param duration
  */
 export const getCustomDates = (duration: EDurationFilters, customDates: string[]): string => {
   const today = new Date();
-  let firstDay, lastDay;
 
   switch (duration) {
     case EDurationFilters.NONE:
       return "";
     case EDurationFilters.TODAY:
-      firstDay = renderFormattedPayloadDate(today);
-      lastDay = renderFormattedPayloadDate(today);
-      return `${firstDay};after,${lastDay};before`;
+      return payloadDateRange(today, today);
     case EDurationFilters.THIS_WEEK:
-      firstDay = renderFormattedPayloadDate(startOfWeek(today));
-      lastDay = renderFormattedPayloadDate(endOfWeek(today));
-      return `${firstDay};after,${lastDay};before`;
+      return payloadDateRange(startOfWeek(today), endOfWeek(today));
     case EDurationFilters.THIS_MONTH:
-      firstDay = renderFormattedPayloadDate(startOfMonth(today));
-      lastDay = renderFormattedPayloadDate(endOfMonth(today));
-      return `${firstDay};after,${lastDay};before`;
+      return payloadDateRange(startOfMonth(today), endOfMonth(today));
     case EDurationFilters.THIS_YEAR:
-      firstDay = renderFormattedPayloadDate(startOfYear(today));
-      lastDay = renderFormattedPayloadDate(endOfYear(today));
-      return `${firstDay};after,${lastDay};before`;
+      return payloadDateRange(startOfYear(today), endOfYear(today));
     case EDurationFilters.CUSTOM:
       return customDates.join(",");
   }
@@ -53,16 +50,16 @@ export const getCustomDates = (duration: EDurationFilters, customDates: string[]
 export const getRedirectionFilters = (type: TIssuesListTypes): string => {
   const today = renderFormattedPayloadDate(new Date());
 
-  const filterParams =
-    type === "pending"
-      ? "?state_group=backlog,unstarted,started"
-      : type === "upcoming"
-        ? `?target_date=${today};after`
-        : type === "overdue"
-          ? `?target_date=${today};before`
-          : "?state_group=completed";
-
-  return filterParams;
+  switch (type) {
+    case "pending":
+      return "?state_group=backlog,unstarted,started";
+    case "upcoming":
+      return `?target_date=${today};after`;
+    case "overdue":
+      return `?target_date=${today};before`;
+    default:
+      return "?state_group=completed";
+  }
 };
 
 /**
@@ -75,11 +72,9 @@ export const getTabKey = (duration: EDurationFilters, tab: TIssuesListTypes | un
 
   if (tab === "completed") return tab;
 
-  if (duration === "none") return "pending";
-  else {
-    if (["upcoming", "overdue"].includes(tab)) return tab;
-    else return "upcoming";
-  }
+  if (duration === EDurationFilters.NONE) return "pending";
+  if (["upcoming", "overdue"].includes(tab)) return tab;
+  return "upcoming";
 };
 
 /**
@@ -88,14 +83,15 @@ export const getTabKey = (duration: EDurationFilters, tab: TIssuesListTypes | un
  * @param customDates
  */
 export const getDurationFilterDropdownLabel = (duration: EDurationFilters, customDates: string[]): string => {
-  if (duration !== "custom") return DURATION_FILTER_OPTIONS.find((option) => option.key === duration)?.label ?? "";
-  else {
-    const afterDate = customDates.find((date) => date.includes("after"))?.split(";")[0];
-    const beforeDate = customDates.find((date) => date.includes("before"))?.split(";")[0];
-
-    if (afterDate && beforeDate) return `${renderFormattedDate(afterDate)} - ${renderFormattedDate(beforeDate)}`;
-    else if (afterDate) return `After ${renderFormattedDate(afterDate)}`;
-    else if (beforeDate) return `Before ${renderFormattedDate(beforeDate)}`;
-    else return "";
+  if (duration !== EDurationFilters.CUSTOM) {
+    return DURATION_FILTER_OPTIONS.find((option) => option.key === duration)?.label ?? "";
   }
+
+  const afterDate = customDates.find((date) => date.includes("after"))?.split(";")[0];
+  const beforeDate = customDates.find((date) => date.includes("before"))?.split(";")[0];
+
+  if (afterDate && beforeDate) return `${renderFormattedDate(afterDate)} - ${renderFormattedDate(beforeDate)}`;
+  if (afterDate) return `After ${renderFormattedDate(afterDate)}`;
+  if (beforeDate) return `Before ${renderFormattedDate(beforeDate)}`;
+  return "";
 };

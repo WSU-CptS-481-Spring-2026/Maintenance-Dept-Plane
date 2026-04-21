@@ -154,8 +154,12 @@ export default defineConfig([
       "import/resolver": {
         typescript: {
           alwaysTryTypes: true,
-          project: "{apps,packages}/*/tsconfig.json",
+          project: [
+              "apps/web/tsconfig.json",
+              "packages/*/tsconfig.json"
+          ],
         },
+        node: true,
       },
       "import/internal-regex": "^@plane/",
     },
