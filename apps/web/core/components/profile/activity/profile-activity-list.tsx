@@ -6,12 +6,7 @@
 
 import { observer } from "mobx-react";
 import { ActivitySettingsLoader } from "@/components/ui/loader/settings/activity";
-// hooks
-import { useUser } from "@/hooks/store/user";
-import { ActivityChangeItem } from "./activity-change-item";
-import { ActivityCommentItem } from "./activity-comment-item";
-import type { ActivityItem } from "./activity-helpers";
-import { isCommentActivity, shouldRenderChangeActivity } from "./activity-helpers";
+import { ActivityList } from "./activity-list";
 import { useProfileActivityFeed } from "./use-profile-activity-feed";
 
 type Props = {
@@ -24,8 +19,6 @@ type Props = {
 
 export const ProfileActivityListPage = observer(function ProfileActivityListPage(props: Props) {
   const { cursor, perPage, updateResultsCount, updateTotalPages, updateEmptyState } = props;
-  // store hooks
-  const { data: currentUser } = useUser();
   const userProfileActivity = useProfileActivityFeed({
     cursor,
     perPage,
@@ -37,33 +30,7 @@ export const ProfileActivityListPage = observer(function ProfileActivityListPage
   });
 
   return userProfileActivity ? (
-    <ul>
-      {userProfileActivity.results.map((activityItem: ActivityItem) => {
-        if (isCommentActivity(activityItem)) {
-          return (
-            <ActivityCommentItem
-              key={activityItem.id}
-              activity={activityItem}
-              workspaceId={activityItem.workspace_detail?.id?.toString() ?? ""}
-              workspaceSlug={activityItem.workspace_detail?.slug?.toString() ?? ""}
-            />
-          );
-        }
-
-        if (shouldRenderChangeActivity(activityItem)) {
-          return (
-            <ActivityChangeItem
-              key={activityItem.id}
-              activity={activityItem}
-              currentUserId={currentUser?.id}
-              showIssueLink={false}
-            />
-          );
-        }
-
-        return null;
-      })}
-    </ul>
+    <ActivityList activity={userProfileActivity} showIssueLink={false} useActivityWorkspace />
   ) : (
     <ActivitySettingsLoader />
   );

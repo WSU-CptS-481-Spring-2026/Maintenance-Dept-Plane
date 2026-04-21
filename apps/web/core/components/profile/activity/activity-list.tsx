@@ -20,10 +20,12 @@ import { useUser } from "@/hooks/store/user";
 
 type Props = {
   activity: IUserActivityResponse | undefined;
+  showIssueLink?: boolean;
+  useActivityWorkspace?: boolean;
 };
 
 export const ActivityList = observer(function ActivityList(props: Props) {
-  const { activity } = props;
+  const { activity, showIssueLink = true, useActivityWorkspace = false } = props;
   // params
   const { workspaceSlug } = useParams();
   // store hooks
@@ -37,13 +39,20 @@ export const ActivityList = observer(function ActivityList(props: Props) {
       {activity ? (
         <ul>
           {activity.results.map((activityItem: ActivityItem) => {
+            const itemWorkspaceSlug = useActivityWorkspace
+              ? activityItem.workspace_detail?.slug?.toString() ?? ""
+              : workspaceSlug?.toString() ?? "";
+            const itemWorkspaceId = useActivityWorkspace
+              ? activityItem.workspace_detail?.id?.toString() ?? ""
+              : workspaceId;
+
             if (isCommentActivity(activityItem)) {
               return (
                 <ActivityCommentItem
                   key={activityItem.id}
                   activity={activityItem}
-                  workspaceId={workspaceId}
-                  workspaceSlug={workspaceSlug?.toString() ?? ""}
+                  workspaceId={itemWorkspaceId}
+                  workspaceSlug={itemWorkspaceSlug}
                 />
               );
             }
@@ -54,6 +63,7 @@ export const ActivityList = observer(function ActivityList(props: Props) {
                   key={activityItem.id}
                   activity={activityItem}
                   currentUserId={currentUser?.id}
+                  showIssueLink={showIssueLink}
                 />
               );
             }
