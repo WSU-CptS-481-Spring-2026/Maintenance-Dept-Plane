@@ -4,10 +4,9 @@
  * See the LICENSE file for details.
  */
 
-import type { IUserActivityResponse } from "@plane/types";
 import { getFileURL } from "@plane/utils";
-
-type ActivityItemActor = IUserActivityResponse["results"][number]["actor_detail"];
+import type { ActivityItemActor } from "./activity-helpers";
+import { hasAvatarUrl } from "./activity-helpers";
 
 type ActivityAvatarProps = {
   actor: ActivityItemActor;
@@ -18,9 +17,7 @@ export const ActivityAvatar = ({ actor, size }: ActivityAvatarProps) => {
   const dimensions = size === "small" ? 24 : 30;
   const containerClass = size === "small" ? "h-6 w-6" : "h-7 w-7";
 
-  const hasValidAvatar = actor.avatar_url && actor.avatar_url !== "";
-
-  if (hasValidAvatar) {
+  if (hasAvatarUrl(actor)) {
     return (
       <img
         src={getFileURL(actor.avatar_url)}

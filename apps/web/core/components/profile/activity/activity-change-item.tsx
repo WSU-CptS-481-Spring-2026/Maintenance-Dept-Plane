@@ -6,16 +6,20 @@
 
 import Link from "next/link";
 import { History } from "lucide-react";
-import type { IUserActivityResponse } from "@plane/types";
 import { calculateTimeAgo } from "@plane/utils";
 // components
 import { ActivityIcon, ActivityMessage, IssueLink } from "@/components/core/activity";
 import { ActivityAvatar } from "./activity-avatar";
-
-const EXCLUDED_FIELDS = ["cycles", "modules", "attachment", "link", "estimate"] as const;
+import type { ActivityItem } from "./activity-helpers";
+import {
+  getActorDisplayName,
+  isArchivedByPlaneActivity,
+  isArchiveRestoreActivity,
+  isNewIssueActivity,
+} from "./activity-helpers";
 
 type ActivityChangeItemProps = {
-  activity: IUserActivityResponse["results"][number];
+  activity: ActivityItem;
   currentUserId: string | undefined;
 };
 
@@ -23,13 +27,9 @@ export const ActivityChangeItem = ({
   activity,
   currentUserId,
 }: ActivityChangeItemProps) => {
-  const isNewIssue =
-    activity.verb === "created" &&
-    !EXCLUDED_FIELDS.includes(activity.field?.toString() as any) &&
-    !activity.field;
-
-  const isArchiveRestore = activity.new_value === "restore";
-  const isArchivedBy = activity.field === "archived_at" && !isArchiveRestore;
+  const isNewIssue = isNewIssueActivity(activity);
+  const isArchiveRestore = isArchiveRestoreActivity(activity);
+  const isArchivedBy = isArchivedByPlaneActivity(activity);
 
   const getActorDisplay = () => {
     if (isArchivedBy) {
@@ -40,9 +40,7 @@ export const ActivityChangeItem = ({
       return `${activity.actor_detail.first_name} Bot`;
     }
 
-    return currentUserId === activity.actor_detail.id
-      ? "You"
-      : activity.actor_detail.display_name;
+    return getActorDisplayName(activity, currentUserId);
   };
 
   const actorDisplay = getActorDisplay();

@@ -12,6 +12,8 @@ import type { IUserActivityResponse } from "@plane/types";
 import { ActivitySettingsLoader } from "@/components/ui/loader/settings/activity";
 import { ActivityCommentItem } from "./activity-comment-item";
 import { ActivityChangeItem } from "./activity-change-item";
+import type { ActivityItem } from "./activity-helpers";
+import { isCommentActivity, shouldRenderChangeActivity } from "./activity-helpers";
 // hooks
 import { useWorkspace } from "@/hooks/store/use-workspace";
 import { useUser } from "@/hooks/store/user";
@@ -35,8 +37,8 @@ export const ActivityList = observer(function ActivityList(props: Props) {
     <>
       {activity ? (
         <ul>
-          {activity.results.map((activityItem) => {
-            if (activityItem.field === "comment") {
+          {activity.results.map((activityItem: ActivityItem) => {
+            if (isCommentActivity(activityItem)) {
               return (
                 <ActivityCommentItem
                   key={activityItem.id}
@@ -47,7 +49,7 @@ export const ActivityList = observer(function ActivityList(props: Props) {
               );
             }
 
-            if ("field" in activityItem && activityItem.field !== "updated_by") {
+            if (shouldRenderChangeActivity(activityItem)) {
               return (
                 <ActivityChangeItem
                   key={activityItem.id}

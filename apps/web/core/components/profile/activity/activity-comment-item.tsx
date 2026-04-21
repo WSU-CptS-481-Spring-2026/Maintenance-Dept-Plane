@@ -5,14 +5,15 @@
  */
 
 import { MessageSquare } from "lucide-react";
-import type { IUserActivityResponse } from "@plane/types";
 import { calculateTimeAgo } from "@plane/utils";
 // components
 import { RichTextEditor } from "@/components/editor/rich-text";
 import { ActivityAvatar } from "./activity-avatar";
+import type { ActivityItem } from "./activity-helpers";
+import { getActivityCommentValue, getActorDisplayName } from "./activity-helpers";
 
 type ActivityCommentItemProps = {
-  activity: IUserActivityResponse["results"][number];
+  activity: ActivityItem;
   workspaceId: string;
   workspaceSlug: string;
 };
@@ -22,13 +23,6 @@ export const ActivityCommentItem = ({
   workspaceId,
   workspaceSlug,
 }: ActivityCommentItemProps) => {
-  const getCommentValue = () => {
-    if (activity.new_value !== "") {
-      return activity.new_value?.toString() ?? "";
-    }
-    return activity.old_value?.toString() ?? "";
-  };
-
   return (
     <div key={activity.id} className="mt-2">
       <div className="relative flex items-start space-x-3">
@@ -41,9 +35,7 @@ export const ActivityCommentItem = ({
         <div className="min-w-0 flex-1">
           <div>
             <div className="text-11">
-              {activity.actor_detail.is_bot
-                ? activity.actor_detail.first_name + " Bot"
-                : activity.actor_detail.display_name}
+              {getActorDisplayName(activity)}
             </div>
             <p className="mt-0.5 text-11 text-secondary">
               Commented {calculateTimeAgo(activity.created_at)}
@@ -53,7 +45,7 @@ export const ActivityCommentItem = ({
             <RichTextEditor
               editable={false}
               id={activity.id}
-              initialValue={getCommentValue()}
+              initialValue={getActivityCommentValue(activity)}
               containerClassName="text-11 bg-surface-1"
               workspaceId={workspaceId}
               workspaceSlug={workspaceSlug}
