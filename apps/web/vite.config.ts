@@ -30,23 +30,7 @@ export default defineConfig(() => ({
       "next/script": path.resolve(__dirname, "app/compat/next/script.tsx"),
     },
     dedupe: ["react", "react-dom", "@headlessui/react"],
-    preserveSymlinks: true,
   },
-  optimizeDeps: {
-    entries: ["./**/*.ts", "./**/*.tsx"],
-    exclude: [
-      "@plane/constants",
-      "@plane/types",
-      "@plane/utils",
-      "@plane/services",
-      "@plane/editor",
-      "@plane/ui",
-      "@plane/hooks",
-      "@plane/shared-state",
-      "@plane/propel",
-    ],
-  },
-
   server: {
     host: "127.0.0.1",
   },
@@ -61,4 +45,5 @@ export default defineConfig(() => ({
     },
     include: ["**/*.spec.ts"],
   },
+  // No SSR-specific overrides needed; alias resolves to ESM build
 }));
