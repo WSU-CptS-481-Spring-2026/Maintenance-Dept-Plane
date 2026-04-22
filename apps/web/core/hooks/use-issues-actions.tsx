@@ -93,43 +93,19 @@ export const useIssuesActions = (storeType: EIssuesStoreType): IssueActions => {
   }
 };
 
-const useProjectIssueActions = () => {
-  // router
-  const { workspaceSlug: routerWorkspaceSlug, projectId: routerProjectId } = useParams();
-  const workspaceSlug = routerWorkspaceSlug?.toString();
-  const projectId = routerProjectId?.toString();
-  // store hooks
-  const { issues, issuesFilter } = useIssues(EIssuesStoreType.PROJECT);
-
-  const fetchIssues = useCallback(
-    async (loadType: TLoader, options: IssuePaginationOptions) => {
-      if (!workspaceSlug || !projectId) return;
-      return issues.fetchIssues(workspaceSlug.toString(), projectId.toString(), loadType, options);
-    },
-    [issues.fetchIssues, workspaceSlug, projectId]
-  );
-  const fetchNextIssues = useCallback(
-    async (groupId?: string, subGroupId?: string) => {
-      if (!workspaceSlug || !projectId) return;
-      return issues.fetchNextIssues(workspaceSlug.toString(), projectId.toString(), groupId, subGroupId);
-    },
-    [issues.fetchIssues, workspaceSlug, projectId]
-  );
-
-  const createIssue = useCallback(
-    async (projectId: string | undefined | null, data: Partial<TIssue>) => {
-      if (!workspaceSlug || !projectId) return;
-      return await issues.createIssue(workspaceSlug, projectId, data);
-    },
-    [issues.createIssue, workspaceSlug]
-  );
-  const quickAddIssue = useCallback(
-    async (projectId: string | undefined | null, data: TIssue) => {
-      if (!workspaceSlug || !projectId) return;
-      return await issues.quickAddIssue(workspaceSlug, projectId, data);
-    },
-    [issues.quickAddIssue, workspaceSlug]
-  );
+/**
+ * Shared callbacks for updateIssue, removeIssue, and archiveIssue — the three operations
+ * that are identical across every store-specific issue-action hook.
+ * Callers must provide the resolved `workspaceSlug` (already a string, not a param).
+ */
+const useStandardIssueCallbacks = (
+  issues: {
+    updateIssue: (workspaceSlug: string, projectId: string, issueId: string, data: Partial<TIssue>) => Promise<void>;
+    removeIssue: (workspaceSlug: string, projectId: string, issueId: string) => Promise<void>;
+    archiveIssue?: (workspaceSlug: string, projectId: string, issueId: string) => Promise<void>;
+  },
+  workspaceSlug: string | undefined
+) => {
   const updateIssue = useCallback(
     async (projectId: string | undefined | null, issueId: string, data: Partial<TIssue>) => {
       if (!workspaceSlug || !projectId) return;
@@ -146,12 +122,49 @@ const useProjectIssueActions = () => {
   );
   const archiveIssue = useCallback(
     async (projectId: string | undefined | null, issueId: string) => {
-      if (!workspaceSlug || !projectId) return;
+      if (!workspaceSlug || !projectId || !issues.archiveIssue) return;
       return await issues.archiveIssue(workspaceSlug, projectId, issueId);
     },
     [issues.archiveIssue, workspaceSlug]
   );
+  return { updateIssue, removeIssue, archiveIssue };
+};
 
+const useProjectIssueActions = () => {
+  const { workspaceSlug: routerWorkspaceSlug, projectId: routerProjectId } = useParams();
+  const workspaceSlug = routerWorkspaceSlug?.toString();
+  const projectId = routerProjectId?.toString();
+  const { issues, issuesFilter } = useIssues(EIssuesStoreType.PROJECT);
+  const { updateIssue, removeIssue, archiveIssue } = useStandardIssueCallbacks(issues, workspaceSlug);
+
+  const fetchIssues = useCallback(
+    async (loadType: TLoader, options: IssuePaginationOptions) => {
+      if (!workspaceSlug || !projectId) return;
+      return issues.fetchIssues(workspaceSlug, projectId, loadType, options);
+    },
+    [issues.fetchIssues, workspaceSlug, projectId]
+  );
+  const fetchNextIssues = useCallback(
+    async (groupId?: string, subGroupId?: string) => {
+      if (!workspaceSlug || !projectId) return;
+      return issues.fetchNextIssues(workspaceSlug, projectId, groupId, subGroupId);
+    },
+    [issues.fetchIssues, workspaceSlug, projectId]
+  );
+  const createIssue = useCallback(
+    async (projectId: string | undefined | null, data: Partial<TIssue>) => {
+      if (!workspaceSlug || !projectId) return;
+      return await issues.createIssue(workspaceSlug, projectId, data);
+    },
+    [issues.createIssue, workspaceSlug]
+  );
+  const quickAddIssue = useCallback(
+    async (projectId: string | undefined | null, data: TIssue) => {
+      if (!workspaceSlug || !projectId) return;
+      return await issues.quickAddIssue(workspaceSlug, projectId, data);
+    },
+    [issues.quickAddIssue, workspaceSlug]
+  );
   const updateFilters = useCallback(
     async (projectId: string, filterType: TSupportedFilterTypeForUpdate, filters: TSupportedFilterForUpdate) => {
       if (!workspaceSlug) return;
@@ -176,28 +189,26 @@ const useProjectIssueActions = () => {
 };
 
 const useProjectEpicsActions = () => {
-  // router
   const { workspaceSlug: routerWorkspaceSlug, projectId: routerProjectId } = useParams();
   const workspaceSlug = routerWorkspaceSlug?.toString();
   const projectId = routerProjectId?.toString();
-  // store hooks
   const { issues, issuesFilter } = useIssues(EIssuesStoreType.EPIC);
+  const { updateIssue, removeIssue, archiveIssue } = useStandardIssueCallbacks(issues, workspaceSlug);
 
   const fetchIssues = useCallback(
     async (loadType: TLoader, options: IssuePaginationOptions) => {
       if (!workspaceSlug || !projectId) return;
-      return issues.fetchIssues(workspaceSlug.toString(), projectId.toString(), loadType, options);
+      return issues.fetchIssues(workspaceSlug, projectId, loadType, options);
     },
     [issues.fetchIssues, workspaceSlug, projectId]
   );
   const fetchNextIssues = useCallback(
     async (groupId?: string, subGroupId?: string) => {
       if (!workspaceSlug || !projectId) return;
-      return issues.fetchNextIssues(workspaceSlug.toString(), projectId.toString(), groupId, subGroupId);
+      return issues.fetchNextIssues(workspaceSlug, projectId, groupId, subGroupId);
     },
     [issues.fetchIssues, workspaceSlug, projectId]
   );
-
   const createIssue = useCallback(
     async (projectId: string | undefined | null, data: Partial<TIssue>) => {
       if (!workspaceSlug || !projectId) return;
@@ -212,28 +223,6 @@ const useProjectEpicsActions = () => {
     },
     [issues.quickAddIssue, workspaceSlug]
   );
-  const updateIssue = useCallback(
-    async (projectId: string | undefined | null, issueId: string, data: Partial<TIssue>) => {
-      if (!workspaceSlug || !projectId) return;
-      return await issues.updateIssue(workspaceSlug, projectId, issueId, data);
-    },
-    [issues.updateIssue, workspaceSlug]
-  );
-  const removeIssue = useCallback(
-    async (projectId: string | undefined | null, issueId: string) => {
-      if (!workspaceSlug || !projectId) return;
-      return await issues.removeIssue(workspaceSlug, projectId, issueId);
-    },
-    [issues.removeIssue, workspaceSlug]
-  );
-  const archiveIssue = useCallback(
-    async (projectId: string | undefined | null, issueId: string) => {
-      if (!workspaceSlug || !projectId) return;
-      return await issues.archiveIssue(workspaceSlug, projectId, issueId);
-    },
-    [issues.archiveIssue, workspaceSlug]
-  );
-
   const updateFilters = useCallback(
     async (projectId: string, filterType: TSupportedFilterTypeForUpdate, filters: TSupportedFilterForUpdate) => {
       if (!workspaceSlug) return;
@@ -258,35 +247,27 @@ const useProjectEpicsActions = () => {
 };
 
 const useCycleIssueActions = () => {
-  // router
   const { workspaceSlug: routerWorkspaceSlug, projectId: routerProjectId, cycleId: routerCycleId } = useParams();
   const workspaceSlug = routerWorkspaceSlug?.toString();
   const projectId = routerProjectId?.toString();
   const cycleId = routerCycleId?.toString();
-  // store hooks
   const { issues, issuesFilter } = useIssues(EIssuesStoreType.CYCLE);
+  const { updateIssue, removeIssue, archiveIssue } = useStandardIssueCallbacks(issues, workspaceSlug);
 
   const fetchIssues = useCallback(
     async (loadType: TLoader, options: IssuePaginationOptions, cycleId?: string) => {
       if (!workspaceSlug || !projectId || !cycleId) return;
-      return issues.fetchIssues(workspaceSlug.toString(), projectId.toString(), loadType, options, cycleId.toString());
+      return issues.fetchIssues(workspaceSlug, projectId, loadType, options, cycleId);
     },
     [issues.fetchIssues, workspaceSlug, projectId]
   );
   const fetchNextIssues = useCallback(
     async (groupId?: string, subGroupId?: string) => {
       if (!workspaceSlug || !projectId || !cycleId) return;
-      return issues.fetchNextIssues(
-        workspaceSlug.toString(),
-        projectId.toString(),
-        cycleId.toString(),
-        groupId,
-        subGroupId
-      );
+      return issues.fetchNextIssues(workspaceSlug, projectId, cycleId, groupId, subGroupId);
     },
     [issues.fetchIssues, workspaceSlug, projectId, cycleId]
   );
-
   const createIssue = useCallback(
     async (projectId: string | undefined | null, data: Partial<TIssue>) => {
       if (!cycleId || !workspaceSlug || !projectId) return;
@@ -301,20 +282,6 @@ const useCycleIssueActions = () => {
     },
     [issues.quickAddIssue, workspaceSlug, cycleId]
   );
-  const updateIssue = useCallback(
-    async (projectId: string | undefined | null, issueId: string, data: Partial<TIssue>) => {
-      if (!workspaceSlug || !projectId) return;
-      return await issues.updateIssue(workspaceSlug, projectId, issueId, data);
-    },
-    [issues.updateIssue, workspaceSlug]
-  );
-  const removeIssue = useCallback(
-    async (projectId: string | undefined | null, issueId: string) => {
-      if (!workspaceSlug || !projectId) return;
-      return await issues.removeIssue(workspaceSlug, projectId, issueId);
-    },
-    [issues.removeIssue, workspaceSlug]
-  );
   const removeIssueFromView = useCallback(
     async (projectId: string | undefined | null, issueId: string) => {
       if (!cycleId || !workspaceSlug || !projectId) return;
@@ -322,14 +289,6 @@ const useCycleIssueActions = () => {
     },
     [issues.removeIssueFromCycle, cycleId, workspaceSlug]
   );
-  const archiveIssue = useCallback(
-    async (projectId: string | undefined | null, issueId: string) => {
-      if (!workspaceSlug || !projectId) return;
-      return await issues.archiveIssue(workspaceSlug, projectId, issueId);
-    },
-    [issues.archiveIssue, workspaceSlug]
-  );
-
   const updateFilters = useCallback(
     async (projectId: string, filterType: TSupportedFilterTypeForUpdate, filters: TSupportedFilterForUpdate) => {
       if (!cycleId || !workspaceSlug) return;
@@ -365,35 +324,27 @@ const useCycleIssueActions = () => {
 };
 
 const useModuleIssueActions = () => {
-  // router
   const { workspaceSlug: routerWorkspaceSlug, projectId: routerProjectId, moduleId: routerModuleId } = useParams();
   const workspaceSlug = routerWorkspaceSlug?.toString();
   const projectId = routerProjectId?.toString();
   const moduleId = routerModuleId?.toString();
-  // store hooks
   const { issues, issuesFilter } = useIssues(EIssuesStoreType.MODULE);
+  const { updateIssue, removeIssue, archiveIssue } = useStandardIssueCallbacks(issues, workspaceSlug);
 
   const fetchIssues = useCallback(
     async (loadType: TLoader, options: IssuePaginationOptions, moduleId?: string) => {
       if (!workspaceSlug || !projectId || !moduleId) return;
-      return issues.fetchIssues(workspaceSlug.toString(), projectId.toString(), loadType, options, moduleId.toString());
+      return issues.fetchIssues(workspaceSlug, projectId, loadType, options, moduleId);
     },
     [issues.fetchIssues, workspaceSlug, projectId]
   );
   const fetchNextIssues = useCallback(
     async (groupId?: string, subGroupId?: string) => {
       if (!workspaceSlug || !projectId || !moduleId) return;
-      return issues.fetchNextIssues(
-        workspaceSlug.toString(),
-        projectId.toString(),
-        moduleId.toString(),
-        groupId,
-        subGroupId
-      );
+      return issues.fetchNextIssues(workspaceSlug, projectId, moduleId, groupId, subGroupId);
     },
     [issues.fetchIssues, workspaceSlug, projectId, moduleId]
   );
-
   const createIssue = useCallback(
     async (projectId: string | undefined | null, data: Partial<TIssue>) => {
       if (!moduleId || !workspaceSlug || !projectId) return;
@@ -408,20 +359,6 @@ const useModuleIssueActions = () => {
     },
     [issues.quickAddIssue, workspaceSlug, moduleId]
   );
-  const updateIssue = useCallback(
-    async (projectId: string | undefined | null, issueId: string, data: Partial<TIssue>) => {
-      if (!workspaceSlug || !projectId) return;
-      return await issues.updateIssue(workspaceSlug, projectId, issueId, data);
-    },
-    [issues.updateIssue, workspaceSlug]
-  );
-  const removeIssue = useCallback(
-    async (projectId: string | undefined | null, issueId: string) => {
-      if (!workspaceSlug || !projectId) return;
-      return await issues.removeIssue(workspaceSlug, projectId, issueId);
-    },
-    [issues.removeIssue, workspaceSlug]
-  );
   const removeIssueFromView = useCallback(
     async (projectId: string | undefined | null, issueId: string) => {
       if (!moduleId || !workspaceSlug || !projectId) return;
@@ -429,20 +366,12 @@ const useModuleIssueActions = () => {
     },
     [issues.removeIssuesFromModule, moduleId, workspaceSlug]
   );
-  const archiveIssue = useCallback(
-    async (projectId: string | undefined | null, issueId: string) => {
-      if (!workspaceSlug || !projectId) return;
-      return await issues.archiveIssue(workspaceSlug, projectId, issueId);
-    },
-    [issues.archiveIssue, moduleId, workspaceSlug]
-  );
-
   const updateFilters = useCallback(
     async (projectId: string, filterType: TSupportedFilterTypeForUpdate, filters: TSupportedFilterForUpdate) => {
       if (!moduleId || !workspaceSlug) return;
       return await issuesFilter.updateFilters(workspaceSlug, projectId, filterType, filters, moduleId);
     },
-    [issuesFilter.updateFilters, moduleId]
+    [issuesFilter.updateFilters, moduleId, workspaceSlug]
   );
 
   return useMemo(
@@ -457,39 +386,41 @@ const useModuleIssueActions = () => {
       archiveIssue,
       updateFilters,
     }),
-    [fetchIssues, createIssue, updateIssue, removeIssue, removeIssueFromView, archiveIssue, updateFilters]
+    [
+      fetchIssues,
+      fetchNextIssues,
+      createIssue,
+      quickAddIssue,
+      updateIssue,
+      removeIssue,
+      removeIssueFromView,
+      archiveIssue,
+      updateFilters,
+    ]
   );
 };
 
 const useProfileIssueActions = () => {
-  // router
   const { workspaceSlug: routerWorkspaceSlug, userId: routerUserId } = useParams();
   const workspaceSlug = routerWorkspaceSlug?.toString();
   const userId = routerUserId?.toString();
-  // store hooks
   const { issues, issuesFilter } = useIssues(EIssuesStoreType.PROFILE);
+  const { updateIssue, removeIssue, archiveIssue } = useStandardIssueCallbacks(issues, workspaceSlug);
 
   const fetchIssues = useCallback(
     async (loadType: TLoader, options: IssuePaginationOptions, viewId?: string) => {
       if (!workspaceSlug || !userId || !viewId) return;
-      return issues.fetchIssues(
-        workspaceSlug.toString(),
-        userId.toString(),
-        loadType,
-        options,
-        viewId as TProfileViews
-      );
+      return issues.fetchIssues(workspaceSlug, userId, loadType, options, viewId as TProfileViews);
     },
     [issues.fetchIssues, workspaceSlug, userId]
   );
   const fetchNextIssues = useCallback(
     async (groupId?: string, subGroupId?: string) => {
       if (!workspaceSlug || !userId) return;
-      return issues.fetchNextIssues(workspaceSlug.toString(), userId.toString(), groupId, subGroupId);
+      return issues.fetchNextIssues(workspaceSlug, userId, groupId, subGroupId);
     },
     [issues.fetchIssues, workspaceSlug, userId]
   );
-
   const createIssue = useCallback(
     async (projectId: string | undefined | null, data: Partial<TIssue>) => {
       if (!workspaceSlug || !projectId) return;
@@ -497,28 +428,6 @@ const useProfileIssueActions = () => {
     },
     [issues.createIssue, workspaceSlug]
   );
-  const updateIssue = useCallback(
-    async (projectId: string | undefined | null, issueId: string, data: Partial<TIssue>) => {
-      if (!workspaceSlug || !projectId) return;
-      return await issues.updateIssue(workspaceSlug, projectId, issueId, data);
-    },
-    [issues.updateIssue, workspaceSlug]
-  );
-  const removeIssue = useCallback(
-    async (projectId: string | undefined | null, issueId: string) => {
-      if (!workspaceSlug || !projectId) return;
-      return await issues.removeIssue(workspaceSlug, projectId, issueId);
-    },
-    [issues.removeIssue, workspaceSlug]
-  );
-  const archiveIssue = useCallback(
-    async (projectId: string | undefined | null, issueId: string) => {
-      if (!workspaceSlug || !projectId) return;
-      return await issues.archiveIssue(workspaceSlug, projectId, issueId);
-    },
-    [issues.archiveIssue, workspaceSlug]
-  );
-
   const updateFilters = useCallback(
     async (projectId: string, filterType: TSupportedFilterTypeForUpdate, filters: TSupportedFilterForUpdate) => {
       if (!userId || !workspaceSlug) return;
@@ -528,43 +437,33 @@ const useProfileIssueActions = () => {
   );
 
   return useMemo(
-    () => ({
-      fetchIssues,
-      fetchNextIssues,
-      createIssue,
-      updateIssue,
-      removeIssue,
-      archiveIssue,
-      updateFilters,
-    }),
-    [fetchIssues, createIssue, updateIssue, removeIssue, archiveIssue, updateFilters]
+    () => ({ fetchIssues, fetchNextIssues, createIssue, updateIssue, removeIssue, archiveIssue, updateFilters }),
+    [fetchIssues, fetchNextIssues, createIssue, updateIssue, removeIssue, archiveIssue, updateFilters]
   );
 };
 
 const useProjectViewIssueActions = () => {
-  // router
   const { workspaceSlug: routerWorkspaceSlug, projectId: routerProjectId, viewId: routerViewId } = useParams();
   const workspaceSlug = routerWorkspaceSlug?.toString();
   const projectId = routerProjectId?.toString();
   const viewId = routerViewId?.toString();
-  // store hooks
   const { issues, issuesFilter } = useIssues(EIssuesStoreType.PROJECT_VIEW);
+  const { updateIssue, removeIssue, archiveIssue } = useStandardIssueCallbacks(issues, workspaceSlug);
 
   const fetchIssues = useCallback(
     async (loadType: TLoader, options: IssuePaginationOptions, viewId?: string) => {
       if (!workspaceSlug || !projectId || !viewId) return;
-      return issues.fetchIssues(workspaceSlug.toString(), projectId.toString(), viewId, loadType, options);
+      return issues.fetchIssues(workspaceSlug, projectId, viewId, loadType, options);
     },
     [issues.fetchIssues, workspaceSlug, projectId]
   );
   const fetchNextIssues = useCallback(
     async (groupId?: string, subGroupId?: string) => {
       if (!workspaceSlug || !projectId || !viewId) return;
-      return issues.fetchNextIssues(workspaceSlug.toString(), projectId.toString(), viewId, groupId, subGroupId);
+      return issues.fetchNextIssues(workspaceSlug, projectId, viewId, groupId, subGroupId);
     },
     [issues.fetchIssues, workspaceSlug, projectId]
   );
-
   const createIssue = useCallback(
     async (projectId: string | undefined | null, data: Partial<TIssue>) => {
       if (!workspaceSlug || !projectId) return;
@@ -579,28 +478,6 @@ const useProjectViewIssueActions = () => {
     },
     [issues.quickAddIssue, workspaceSlug]
   );
-  const updateIssue = useCallback(
-    async (projectId: string | undefined | null, issueId: string, data: Partial<TIssue>) => {
-      if (!workspaceSlug || !projectId) return;
-      return await issues.updateIssue(workspaceSlug, projectId, issueId, data);
-    },
-    [issues.updateIssue, workspaceSlug]
-  );
-  const removeIssue = useCallback(
-    async (projectId: string | undefined | null, issueId: string) => {
-      if (!workspaceSlug || !projectId) return;
-      return await issues.removeIssue(workspaceSlug, projectId, issueId);
-    },
-    [issues.removeIssue, workspaceSlug]
-  );
-  const archiveIssue = useCallback(
-    async (projectId: string | undefined | null, issueId: string) => {
-      if (!workspaceSlug || !projectId) return;
-      return await issues.archiveIssue(workspaceSlug, projectId, issueId);
-    },
-    [issues.archiveIssue, workspaceSlug]
-  );
-
   const updateFilters = useCallback(
     async (projectId: string, filterType: TSupportedFilterTypeForUpdate, filters: TSupportedFilterForUpdate) => {
       if (!viewId || !workspaceSlug) return;
@@ -799,7 +676,7 @@ const useWorkspaceDraftIssueActions = () => {
   // );
 
   const updateFilters = useCallback(
-    async (projectId: string, filterType: TSupportedFilterTypeForUpdate, filters: TSupportedFilterForUpdate) => {
+    async (_projectId: string, filterType: TSupportedFilterTypeForUpdate, filters: TSupportedFilterForUpdate) => {
       filters = filters as IIssueDisplayFilterOptions | IIssueDisplayProperties;
       if (!globalViewId || !workspaceSlug) return;
       return await issuesFilter.updateFilters(workspaceSlug, filterType, filters);
